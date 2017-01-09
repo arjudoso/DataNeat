@@ -23,7 +23,6 @@ import dataneat.genome.NeuronType;
 import dataneat.transferFunction.BiasFunction;
 import dataneat.transferFunction.IdentityFunction;
 import dataneat.transferFunction.SigmoidFunction;
-import dataneat.transferFunction.SoftMax;
 import dataneat.transferFunction.TransferFunction;
 import dataneat.utils.PropertiesHolder;
 
@@ -50,26 +49,17 @@ public class GeneralNeuron extends BaseNeuron {
 			transferFunction = new SigmoidFunction();
 			break;
 		case OUTPUT:
-			if (classification) {
-				transferFunction = new SoftMax();
-			} else {
-				transferFunction = new SigmoidFunction();
-			}
+			transferFunction = new SigmoidFunction();
 			break;
 		default:
 			break;
 		}
 	}
 
-	public void compute() {
+	public double compute() {
 		output = transferFunction.compute(input + externalInput);
 		delta = Math.abs(output - prevOutput);
-	}
-	
-	public void compute(double divisor) {
-		//used for softmax output neurons
-		output = (transferFunction.compute(input + externalInput) / divisor);
-		delta = Math.abs(output - prevOutput);
+		return output;
 	}
 
 	public TransferFunction getTransferFunction() {

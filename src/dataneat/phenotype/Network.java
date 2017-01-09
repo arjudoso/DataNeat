@@ -163,14 +163,17 @@ public class Network extends BaseNeat {
 		}
 
 		if (classification) {
+			//apply softmax 
 			double sum = 0.0;
+
 			for (int i = 0; i < outputIds.size(); i++) {
-				double input = getInputToOutputNeurons(neurons.get(outputIds.get(i)));
-				sum += Math.exp(input);
+				sum += Math.exp(evalGenNeuron(neurons.get(outputIds.get(i))));
 			}
-			
+
 			for (int i = 0; i < outputIds.size(); i++) {
-				neurons.get(outputIds.get(i)).compute(sum);;				
+				GeneralNeuron n = neurons.get(outputIds.get(i));
+				double temp = n.getOutput();
+				n.setOutput(Math.exp(temp) / sum);
 			}
 
 		} else {
@@ -181,7 +184,8 @@ public class Network extends BaseNeat {
 		}
 	}
 
-	private double getInputToOutputNeurons(GeneralNeuron n) {
+	private double evalGenNeuron(GeneralNeuron n) {
+
 		double accum = 0.0;
 
 		for (Map.Entry<Integer, Double> e : n.getLinkWeights().entrySet()) {
@@ -191,22 +195,8 @@ public class Network extends BaseNeat {
 			accum += (output * weight);
 		}
 		n.setInput(accum);
-		return accum;
+		return n.compute();
 	}
-
-	private void evalGenNeuron(GeneralNeuron n) {
-
-		double accum = 0.0;
-
-		for (Map.Entry<Integer, Double> e : n.getLinkWeights().entrySet()) {
-
-			double output = neurons.get(e.getKey()).getPreviousOutput();
-			double weight = e.getValue();
-			accum += (output * weight);
-		}
-		n.setInput(accum);
-		n.compute();
-	}	
 
 	private boolean checkDeltaMet() {
 		// checks the delta of each neuron to see if it is below the threshhold.
