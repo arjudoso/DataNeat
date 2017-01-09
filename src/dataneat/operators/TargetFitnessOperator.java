@@ -30,7 +30,7 @@ public class TargetFitnessOperator extends BaseNeat {
 
 	private static final String FITNESS_FUNCTION = "fitnessFunction";
 	private static final String MAXIMIZE = "maximize";
-	
+	private static final String MODE = "mode";
 
 	private boolean maximize = true;
 	Integer mode = 0;
@@ -40,6 +40,7 @@ public class TargetFitnessOperator extends BaseNeat {
 	public TargetFitnessOperator(PropertiesHolder p) {
 		super(p);
 		maximize = Boolean.parseBoolean(getParams().getProperty(MAXIMIZE));
+		mode = Integer.parseInt(getParams().getProperty(MODE));
 		
 		try {
 			fitnessFunction = (TargetFitnessFunction) Class.forName(getParams().getProperty(FITNESS_FUNCTION))
