@@ -1,18 +1,3 @@
-/*******************************************************************************
- * Copyright [2016] [Ricardo Rivero]
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *******************************************************************************/
 package dataneat.monitor;
 
 import dataneat.base.BaseNeat;
@@ -20,19 +5,17 @@ import dataneat.genome.NeatChromosome;
 import dataneat.utils.PropertiesHolder;
 
 public class FitnessMonitor extends BaseNeat {
-	// this class keeps track of the best fitness seen so far on both training
-	// and test data.
+	//general class for tracking if fitness is stagnant
+	//also used to keep track of best training or testing score seen
 
 	private static final String MAXIMIZE = "maximize";
-	//private static final String ROUND = "roundThreshold";
-	//private static final String DELTA = "fitnessDelta";
-
+	
 	private NeatChromosome bestTrainingFitness = null, bestTestFitness = null;
 	private int trainingCounter = 0, testCounter = 0;
-	boolean timeToStopTraining = false, timeToStopTesting = false;
+	boolean trainingStagnant = false, testingStagnant = false;
 	private double delta = 0.001;
 	private boolean maximize = false;
-	private int roundThreshold = 500;
+	private int roundThreshold = 50;
 
 	public FitnessMonitor(PropertiesHolder p) {
 		super(p);
@@ -113,31 +96,31 @@ public class FitnessMonitor extends BaseNeat {
 
 	private void timeToStopTesting() {
 		if (roundThreshold >= 0) {
-			timeToStopTesting = true;
+			testingStagnant = true;
 		}
 	}
 
 	private void timeToStopTraining() {
 		if (roundThreshold >= 0) {
-			timeToStopTraining = true;
+			trainingStagnant = true;
 		}
 	}
 
 	public void reset() {
 		bestTrainingFitness = null;
 		bestTestFitness = null;
-		timeToStopTraining = false;
-		timeToStopTesting = false;
+		trainingStagnant = false;
+		testingStagnant = false;
 		trainingCounter = 0;
 		testCounter = 0;
 	}
 
 	public boolean trainingStop() {
-		return timeToStopTraining;
+		return trainingStagnant;
 	}
 
 	public boolean testingStop() {
-		return timeToStopTesting;
+		return testingStagnant;
 	}
 
 	public NeatChromosome getBestTrainingFitness() {
@@ -182,5 +165,9 @@ public class FitnessMonitor extends BaseNeat {
 
 	public void setRoundThreshold(int thresh) {
 		roundThreshold = thresh;
+	}
+	
+	public void setDelta(double delta) {
+		this.delta = delta;
 	}
 }

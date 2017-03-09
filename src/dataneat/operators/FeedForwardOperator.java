@@ -16,28 +16,30 @@
 package dataneat.operators;
 
 import java.util.List;
+
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
+
 import dataneat.base.BaseNeat;
 import dataneat.fitness.TargetFitnessFunction;
 import dataneat.genome.NeatChromosome;
 import dataneat.phenotype.Network;
 import dataneat.utils.PropertiesHolder;
 
-public class TestFitnessOperator extends BaseNeat {
-	// almost identical to the fitness operator, but this class instead deals
-	// with the test dataset
+public class FeedForwardOperator extends BaseNeat implements TargetFitnessOperator {
 
 	private static final String FITNESS_FUNCTION = "fitnessFunction";
+	private static final String MAXIMIZE = "maximize";	
 	private static final String BATCH_SIZE = "batchSize";
-
+	private boolean maximize = true;	
+	private Integer batchSize = 50;
 	private TargetFitnessFunction fitnessFunction;
 	private INDArray stabil;
-	private Integer batchSize = 50;
 
-	public TestFitnessOperator(PropertiesHolder p, INDArray stabilMatrix) {
+	public FeedForwardOperator(PropertiesHolder p, INDArray stabilMatrix) {
 		super(p);
 		stabil = stabilMatrix;
+		maximize = Boolean.parseBoolean(getParams().getProperty(MAXIMIZE));
 		batchSize = Integer.parseInt(getParams().getProperty(BATCH_SIZE));
 
 		try {
@@ -45,12 +47,12 @@ public class TestFitnessOperator extends BaseNeat {
 					.newInstance();
 
 		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
 	}
 
+	
 	public void operate(List<NeatChromosome> population, DataSet data) {
 
 		if (population == null) {
@@ -60,19 +62,51 @@ public class TestFitnessOperator extends BaseNeat {
 			return;
 		}
 
+		// do the fitness evaluations on each chromosome
 		population.parallelStream().forEach(chrom -> evaluate(chrom, data));
+
+		// we need the worst fitness in the population, this depends on if
+		// fitness is maximized or minimized
+		double worstFitness;
+		if (maximize) {
+			worstFitness = Double.MAX_VALUE;
+			for (NeatChromosome chrom : population) {
+				if (chrom.getFitness() < worstFitness) {
+					worstFitness = chrom.getFitness();
+				}
+			}
+		} else {
+			// RMSE is minimized, so the worst fitness is the highest value
+			worstFitness = Double.MIN_VALUE;
+			for (NeatChromosome chrom : population) {
+				if (chrom.getFitness() > worstFitness) {
+					worstFitness = chrom.getFitness();
+				}
+			}
+		}
+
+		// now replace raw fitness with distance of each fitness from the
+		// worstfitness of the population. this means that chroms with low RMSE
+		// will have the largest distance from the worstFitness, and thus higher
+		// adjusted fitness. We need this because NEAT expects fitness to be
+		// maximized
+
+		for (NeatChromosome chrom : population) {
+			chrom.setAdjustedFitness(Math.abs(worstFitness - chrom.getFitness()));
+		}
 	}
 
 	private void evaluate(NeatChromosome chrom, DataSet data) {
 		// this function evaluates a single chromosome
 
 		// create phenotype
-		Network net = new Network(chrom, getHolder(), stabil);
+		Network net = new Network(chrom, getHolder(),stabil);		
 
 		// compute on entire training set
-		net.computeNetPrevTimestep(data.getFeatures());
+		net.computeNetCurrentTimestep(data.getFeatures());
+				
 		// set fitness
-		double testFitness = fitnessFunction.computeFitness(data.getLabels(), net.getOutput(), batchSize);
-		chrom.setTestFitness(testFitness);
-	}
+		double fitness = fitnessFunction.computeFitness(data.getLabels(), net.getOutput(), batchSize);
+		chrom.setFitness(fitness);
+	}	
 }

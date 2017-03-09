@@ -15,12 +15,12 @@
  *******************************************************************************/
 package dataneat.transferFunction;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+
 public class IdentityFunction implements TransferFunction {
 
 	@Override
-	public double compute(double input) {
-		
+	public INDArray compute(INDArray input) {		
 		return input;
 	}
-
 }

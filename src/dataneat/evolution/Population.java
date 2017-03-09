@@ -21,33 +21,30 @@ import java.util.List;
 
 import dataneat.base.BaseNeat;
 import dataneat.genome.NeatChromosome;
+import dataneat.monitor.FitnessMonitor;
 import dataneat.speciation.SpeciesDB;
 import dataneat.utils.PropertiesHolder;
 import dataneat.utils.RandGen;
 
 public class Population extends BaseNeat {
 
-
 	private static final String POP_SIZE = "popSize";
 	private static final String CONNECTED = "connected";
-	private static final String MAXIMIZE = "maximize";
 	private static final String ELITE_MODE = "eliteMode";
 	private static final String ELITE_PERCENT = "elitePercent";
 
-	private boolean connected = true, maximize = false;
+	private boolean connected = true;
 	private List<NeatChromosome> chromosomes = new ArrayList<NeatChromosome>();
 	private List<NeatChromosome> elites = new ArrayList<NeatChromosome>();
-	private double bestFitness = -1.0, bestTestFitness = 0.0, bestRaw = 0.0;
+	private FitnessMonitor fitnessMonitor;
 	private SpeciesDB speciesDB;
 	private int popTargetSize = 0;
 	private int numInputs = 1, numOutputs = 1;
 	private Integer eliteMode = 0;
-	private Double elitePercent = 0.0;
-
+	private double elitePercent = 0.0;
 	public Population(PropertiesHolder p, int numInputs, int numOutputs) {
 		super(p);
 		this.connected = Boolean.parseBoolean(getParams().getProperty(CONNECTED));
-		maximize = Boolean.parseBoolean(getParams().getProperty(MAXIMIZE));
 		setPopTargetSize(Integer.parseInt(getParams().getProperty(POP_SIZE)));
 		eliteMode = Integer.parseInt(getParams().getProperty(ELITE_MODE));
 		elitePercent = Double.parseDouble(getParams().getProperty(ELITE_PERCENT));
@@ -56,7 +53,7 @@ public class Population extends BaseNeat {
 
 		this.numInputs = numInputs;
 		this.numOutputs = numOutputs;
-
+		fitnessMonitor = new FitnessMonitor(p);
 		initPopulation(numInputs, numOutputs);
 	}
 
@@ -64,8 +61,16 @@ public class Population extends BaseNeat {
 
 		for (int i = 0; i < popTargetSize; i++) {
 			NeatChromosome chrom = new NeatChromosome(numInputs, numOutputs, connected, getHolder());
-			chromosomes.add(chrom);
+			add(chrom);
 		}
+	}
+	
+	public void add(NeatChromosome chrom) {
+		//wrapper for adding chroms to the arrayList.
+		//all add operations must go through this method
+		fitnessMonitor.updateTest(chrom);
+		fitnessMonitor.updateTraining(chrom);
+		chromosomes.add(chrom);
 	}
 
 	private void addRandom(int amount) {
@@ -74,12 +79,12 @@ public class Population extends BaseNeat {
 
 			if (chromosomes.size() < 1) {
 				NeatChromosome additionalChrom = new NeatChromosome(numInputs, numOutputs, connected, getHolder());
-				chromosomes.add(additionalChrom);
+				add(additionalChrom);
 			} else {
 
 				int duplicatedChrom = RandGen.rand.nextInt(chromosomes.size());
 				NeatChromosome additionalChrom = new NeatChromosome(chromosomes.get(duplicatedChrom));
-				chromosomes.add(additionalChrom);
+				add(additionalChrom);
 			}
 		}
 	}
@@ -105,6 +110,14 @@ public class Population extends BaseNeat {
 		} else {
 			killRandom(difference);
 		}
+	}
+	
+	public NeatChromosome getTrainingBest() {
+		return fitnessMonitor.getBestTrainingFitness();
+	}
+	
+	public NeatChromosome getTestBest() {
+		return fitnessMonitor.getBestTestFitness();
 	}
 
 	public void saveElite() {
@@ -134,12 +147,8 @@ public class Population extends BaseNeat {
 	public void addElites() {
 
 		for (NeatChromosome chrom : elites) {
-			chromosomes.add(chrom);
+			add(chrom);
 		}
-	}
-
-	public double getBestFitness() {
-		return bestFitness;
 	}
 
 	public List<NeatChromosome> getChromosomes() {
@@ -149,11 +158,7 @@ public class Population extends BaseNeat {
 	public void setChromosomes(List<NeatChromosome> pop) {
 		this.chromosomes = pop;
 	}
-
-	public void addAll(List<NeatChromosome> chroms) {
-		chromosomes.addAll(chroms);
-	}
-
+	
 	public void clearChroms() {
 		chromosomes.clear();
 	}
@@ -176,46 +181,9 @@ public class Population extends BaseNeat {
 
 	public void setSpeciesDB(SpeciesDB speciesDB) {
 		this.speciesDB = speciesDB;
-	}
-
-	public NeatChromosome getTrainingBest() {
-		chromosomes.sort(Collections.reverseOrder(
-				(chrom1, chrom2) -> Double.compare(chrom1.getAdjustedFitness(), chrom2.getAdjustedFitness())));
-		bestFitness = chromosomes.get(0).getAdjustedFitness();
-		setBestRaw(chromosomes.get(0).getFitness());
-		return chromosomes.get(0);
-	}
-
-	public NeatChromosome getTestBest() {
-
-		if (maximize) {
-			chromosomes.sort(Collections.reverseOrder(
-					(chrom1, chrom2) -> Double.compare(chrom1.getTestFitness(), chrom2.getTestFitness())));
-		} else {
-			chromosomes.sort((chrom1, chrom2) -> Double.compare(chrom1.getTestFitness(), chrom2.getTestFitness()));
-		}
-
-		bestTestFitness = chromosomes.get(0).getTestFitness();
-		return chromosomes.get(0);
-	}
-
-	public double getBestTestFitness() {
-		return bestTestFitness;
-	}
-
-	public void setBestTestFitness(double bestTestFitness) {
-		this.bestTestFitness = bestTestFitness;
-	}
+	}	
 
 	public List<NeatChromosome> getElites() {
 		return elites;
-	}
-
-	public double getBestRaw() {
-		return bestRaw;
-	}
-
-	public void setBestRaw(double bestRaw) {
-		this.bestRaw = bestRaw;
 	}
 }

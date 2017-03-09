@@ -15,7 +15,9 @@
  *******************************************************************************/
 package dataneat.transferFunction;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+
 public interface TransferFunction {
 
-	public double compute(double input);
+	public INDArray compute(INDArray input);
 }

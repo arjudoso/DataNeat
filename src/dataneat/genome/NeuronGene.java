@@ -114,30 +114,29 @@ public class NeuronGene {
 			return true;
 		}
 
+		if ((neuronType == NeuronType.BIAS) || (neuronType == NeuronType.INPUT)) {
+			// bias nodes and input nodes do not accept incomming connections
+			return true;
+		}
+
 		if (incommingType == NeuronType.BIAS) {
 			// if the neuron trying to connect to this neuron is a bias node,
 			// then just check if this node has a bias connection yet
 			return inputs.contains(incommingNodeId);
 		}
 
-		// bias neurons & input neurons can't have input (other than a bias node
-		// which is dealt with above), so return that this
-		// neuron is invalid
-		if (neuronType == NeuronType.BIAS || neuronType == NeuronType.INPUT) {
-			return true;
+		
+		if (this.neuronType == NeuronType.OUTPUT) {
+			// the ending node of this connection is an output neuron, valid
+			// as long as connection doesn't already exist
+			return (inputs.contains(incommingNodeId));
 		} else {
-			if (this.neuronType == NeuronType.OUTPUT) {
-				// the ending node of this connection is an output neuron, valid
-				// as long as connection doesn't already exist
-				return (inputs.contains(incommingNodeId));
-			} else {
 
-				// we have a hidden neuron
-				// return invalid if this neuron already has an incomming
-				// connection from the parameter neuron or if the connection
-				// would be recurrent
-				return (inputs.contains(incommingNodeId) || checkSplitsInvalid(splitY));
-			}
+			// we have a hidden neuron
+			// return invalid if this neuron already has an incomming
+			// connection from the parameter neuron or if the connection
+			// would be recurrent
+			return (inputs.contains(incommingNodeId) || checkSplitsInvalid(splitY));
 		}
 	}
 
@@ -149,13 +148,14 @@ public class NeuronGene {
 	private int compareSplits(double split1, double split2) {
 
 		// compares split1 to split2. returns 1 if
-		// split1 is larger than or equal to split2, -1 if split1 is less than split2.
+		// split1 is larger than or equal to split2, -1 if split1 is less than
+		// split2.
 
 		if (split1 >= split2) {
 			return 1;
 		}
-		
-		return -1;		
+
+		return -1;
 	}
 
 	public void addInput(int connectionFromId) {

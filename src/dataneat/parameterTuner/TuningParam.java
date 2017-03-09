@@ -18,16 +18,20 @@ package dataneat.parameterTuner;
 import java.util.ArrayList;
 import java.util.List;
 
+import dataneat.base.BaseNeat;
+import dataneat.utils.PropertiesHolder;
 import dataneat.utils.RandGen;
 
-public class TuningParam {
+public class TuningParam extends BaseNeat {
 
-	double max = 0.0, min = 0.0, current = 0.0;
+	double max = 0.0, min = 0.0;
+	Double current = 0.0;
 	List<Double> previousValues = new ArrayList<Double>();
 	boolean isInt = false;
 	String propCode = "";
 
-	public TuningParam(double max, double min, boolean isInt, String propCode) {
+	public TuningParam(double max, double min, boolean isInt, String propCode, PropertiesHolder p) {
+		super(p);
 		this.max = max;
 		this.min = min;
 		this.isInt = isInt;
@@ -78,6 +82,13 @@ public class TuningParam {
 	public void update() {
 		previousValues.add(current);
 		current = generateNew();
+		
+		if (isInt) {
+			getParams().setProperty(propCode, Integer.toString(current.intValue()));
+		}else {
+			getParams().setProperty(propCode, current.toString());
+		}
+		
 	}
 
 	public void setPropCode(String code) {

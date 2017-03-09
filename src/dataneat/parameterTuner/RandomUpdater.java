@@ -25,6 +25,7 @@ public class RandomUpdater implements Updater {
 			param.update();
 		}
 
+		//force add link rate to always be higher than add node rate
 		double node = tuneParams.get(8).getCurrent() * 2;
 		double link = tuneParams.get(7).getCurrent();
 		if (node > link) {

@@ -16,44 +16,40 @@
 package dataneat.phenotype;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.factory.Nd4j;
+
 import dataneat.base.BaseNeat;
 import dataneat.genome.LinkGene;
 import dataneat.genome.NeatChromosome;
-import dataneat.phenotype.neuron.GeneralNeuron;
 import dataneat.utils.PropertiesHolder;
 
 public class Network extends BaseNeat {
 
-	private static final String STABILIZATION_DELTA = "stabilizationDelta";
-	private static final String CLASSIFICATION = "classification";
-
+	private static final String BATCHSIZE = "batchSize";
+	Integer batchSize = 50;
 	private Map<Integer, GeneralNeuron> neurons = new HashMap<Integer, GeneralNeuron>();
-
-	private List<Integer> inputIds = new ArrayList<Integer>();
-	private List<Integer> outputIds = new ArrayList<Integer>();
-	private List<Integer> hiddenIds = new ArrayList<Integer>();
+	private List<GeneralNeuron> inputNeurons = new ArrayList<GeneralNeuron>();
+	private List<GeneralNeuron> hiddenNeurons = new ArrayList<GeneralNeuron>();
+	private List<GeneralNeuron> outputNeurons = new ArrayList<GeneralNeuron>();
 	private int biasId, size = 2;
-	private boolean classification = false;
-	private double stabilizationDelta = 0.01;
+	INDArray stabilMatrix;
 
-	public Network(PropertiesHolder p) {
+	public Network(NeatChromosome chrom, PropertiesHolder p, INDArray stabilMatrix) {
 		super(p);
-	}
-
-	public Network(NeatChromosome chrom, PropertiesHolder p) {
-		super(p);
-		stabilizationDelta = Double.parseDouble(getParams().getProperty(STABILIZATION_DELTA));
-		classification = Boolean.parseBoolean(getParams().getProperty(CLASSIFICATION));
+		this.stabilMatrix = stabilMatrix;		
+		batchSize = Integer.parseInt(getParams().getProperty(BATCHSIZE));
 		// size = chrom.getNeurons().sizeWithBias();
 
 		// first create the nodes
 
 		for (int i = 0; i < chrom.getNeurons().sizeWithBias(); i++) {
-			GeneralNeuron neuron = new GeneralNeuron(chrom.getNeurons().getByIndex(i), getHolder());
+			GeneralNeuron neuron = new GeneralNeuron(chrom.getNeurons().getByIndex(i), getHolder(), this.stabilMatrix);
 			addNeuron(neuron);
 		}
 
@@ -64,8 +60,7 @@ public class Network extends BaseNeat {
 			// skip disabled links
 			if (l.isEnabled()) {
 				// get the neuron that this link is going to and stash the id of
-				// the
-				// neuron it is from along with the links weight
+				// the neuron it is from along with the links weight
 				int to = l.getToNeuronID();
 				int from = l.getFromNeuronID();
 
@@ -74,7 +69,8 @@ public class Network extends BaseNeat {
 		}
 	}
 
-	public void computeNet(List<Double> inputRow) {
+	// shape = (batchSize,numInputs)
+	public void computeNetPrevTimestep(INDArray inputs) {
 
 		// computes the network based on the given inputs.
 
@@ -82,14 +78,15 @@ public class Network extends BaseNeat {
 
 		// flush through the inputs
 
-		for (int i = 0; i < inputIds.size(); i++) {
+		for (int i = 0; i < inputNeurons.size(); i++) {
 
 			// get the current input into the system on the first time
 			// through
 			// the (possibly) recurrent network
-			GeneralNeuron n = neurons.get(inputIds.get(i));
-			n.setExternalInput(inputRow.get(i));
-			evalGenNeuron(n);
+			GeneralNeuron n = inputNeurons.get(i);
+
+			// row vector so transpose
+			n.setOutput(inputs.tensorAlongDimension(i, 0).transpose());
 			n.step();
 		}
 
@@ -104,34 +101,50 @@ public class Network extends BaseNeat {
 		{
 
 			// get neurons ready for timestep
-			for (int i = 0; i < hiddenIds.size(); i++) {
-				GeneralNeuron n = neurons.get(hiddenIds.get(i));
+			for (GeneralNeuron n : hiddenNeurons) {
 				n.step();
 			}
 
-			for (int i = 0; i < outputIds.size(); i++) {
-				GeneralNeuron n = neurons.get(outputIds.get(i));
+			for (GeneralNeuron n : outputNeurons) {
 				n.step();
 			}
 
-			computeSinglePass();
+			computeSinglePassPrev();
 
 			stable = checkDeltaMet();
 			count++;
 		}
-
 	}
 
-	public ArrayList<Double> getOutput() {
+	// shape = (batchSize,numInputs)
+	public void computeNetCurrentTimestep(INDArray inputs) {
 
-		ArrayList<Double> outs = new ArrayList<Double>();
+		// computes the network based on the given inputs.
 
-		for (int i = 0; i < outputIds.size(); i++) {
+		for (int i = 0; i < inputNeurons.size(); i++) {
 
-			int id = outputIds.get(i);
-			outs.add(neurons.get(id).getOutput());
+			GeneralNeuron n = inputNeurons.get(i);
+
+			// row vector so transpose
+			n.setOutput(inputs.tensorAlongDimension(i, 0).transpose());
+			n.step();
 		}
 
+		Collections.sort(hiddenNeurons, (neuron1, neuron2) -> Double.compare(neuron1.getSplitY(), neuron2.getSplitY()));
+		computeSinglePassCurr();
+	}
+
+	public INDArray getOutput() {
+		// outputs should always be columns vectors from individual neurons
+		INDArray outs = null;
+		List<INDArray> outputs = new ArrayList<INDArray>();		
+
+		for (GeneralNeuron n : outputNeurons) {
+			outputs.add(n.getOutput());
+		}
+
+		outs = Nd4j.hstack(outputs);
+		// shape = (batchSize,numOutputs)
 		return outs;
 	}
 
@@ -141,13 +154,13 @@ public class Network extends BaseNeat {
 			biasId = neuron.getId();
 			break;
 		case HIDDEN:
-			hiddenIds.add(neuron.getId());
+			hiddenNeurons.add(neuron);
 			break;
 		case INPUT:
-			inputIds.add(neuron.getId());
+			inputNeurons.add(neuron);
 			break;
 		case OUTPUT:
-			outputIds.add(neuron.getId());
+			outputNeurons.add(neuron);
 			break;
 		default:
 			break;
@@ -156,45 +169,82 @@ public class Network extends BaseNeat {
 		neurons.put(neuron.getId(), neuron);
 	}
 
-	private void computeSinglePass() {
+	private void computeSinglePassPrev() {
 
-		for (int i = 0; i < hiddenIds.size(); i++) {
-			evalGenNeuron(neurons.get(hiddenIds.get(i)));
+		for (GeneralNeuron n : hiddenNeurons) {
+			evalGenNeuronPrev(n);
 		}
 
-		if (classification) {
-			//apply softmax 
-			double sum = 0.0;
-
-			for (int i = 0; i < outputIds.size(); i++) {
-				sum += Math.exp(evalGenNeuron(neurons.get(outputIds.get(i))));
-			}
-
-			for (int i = 0; i < outputIds.size(); i++) {
-				GeneralNeuron n = neurons.get(outputIds.get(i));
-				double temp = n.getOutput();
-				n.setOutput(Math.exp(temp) / sum);
-			}
-
-		} else {
-
-			for (int i = 0; i < outputIds.size(); i++) {
-				evalGenNeuron(neurons.get(outputIds.get(i)));
-			}
+		for (GeneralNeuron n : outputNeurons) {
+			evalGenNeuronPrev(n);
 		}
 	}
 
-	private double evalGenNeuron(GeneralNeuron n) {
+	private void computeSinglePassCurr() {
+		for (GeneralNeuron n : hiddenNeurons) {
+			evalGenNeuronCurr(n);
+		}
 
-		double accum = 0.0;
+		for (GeneralNeuron n : outputNeurons) {
+			evalGenNeuronCurr(n);
+		}
+	}
+
+	// TODO eval func for current timestep
+	private INDArray evalGenNeuronPrev(GeneralNeuron n) {
+		int i = 0;
+		INDArray accum = null;
+		List<INDArray> temp = new ArrayList<INDArray>();
+
+		if (n.getLinkWeights().size() == 0) {
+			n.setInput(Nd4j.zeros(batchSize, 1));
+			return n.computeRecurr();
+		}
+
+		double[] weights = new double[n.getLinkWeights().size()];
 
 		for (Map.Entry<Integer, Double> e : n.getLinkWeights().entrySet()) {
-
-			double output = neurons.get(e.getKey()).getPreviousOutput();
-			double weight = e.getValue();
-			accum += (output * weight);
+			// output is always a column vector
+			INDArray output = neurons.get(e.getKey()).getPreviousOutput();
+			weights[i] = e.getValue();
+			temp.add(output);
+			i++;
 		}
-		n.setInput(accum);
+
+		// shape = (batchSize,numInputsToNeuron)
+		accum = Nd4j.hstack(temp);
+		// shape (numInputsToNeuron, 1)
+		INDArray ndWeights = Nd4j.create(weights, new int[] { weights.length, 1 });
+		n.setInput(accum.mmul(ndWeights));
+		return n.computeRecurr();
+	}
+
+	// TODO eval func for current timestep
+	private INDArray evalGenNeuronCurr(GeneralNeuron n) {
+		int i = 0;
+		INDArray accum = null;
+		List<INDArray> temp = new ArrayList<INDArray>();
+
+		if (n.getLinkWeights().size() == 0) {
+			//n.setInput(Nd4j.zeros(batchSize, 1));
+			return n.compute();
+		}
+
+		double[] weights = new double[n.getLinkWeights().size()];
+
+		for (Map.Entry<Integer, Double> e : n.getLinkWeights().entrySet()) {
+			// output is always a column vector
+			INDArray output = neurons.get(e.getKey()).getOutput();
+			weights[i] = e.getValue();
+			temp.add(output);
+			i++;
+		}
+
+		// shape = (batchSize,numInputsToNeuron)
+		accum = Nd4j.hstack(temp);
+		// shape (numInputsToNeuron, 1)
+		INDArray ndWeights = Nd4j.create(weights, new int[] { weights.length, 1 });
+		n.setInput(accum.mmul(ndWeights));
 		return n.compute();
 	}
 
@@ -202,20 +252,19 @@ public class Network extends BaseNeat {
 		// checks the delta of each neuron to see if it is below the threshhold.
 		// If any delta is above threshhold, function returns false
 
-		for (int i = 0; i < hiddenIds.size(); i++) {
+		for (GeneralNeuron n : hiddenNeurons) {
 
-			if (stabilizationDelta < neurons.get(hiddenIds.get(i)).getDelta()) {
+			if (!n.isStable()) {
 				return false;
 			}
 		}
 
-		for (int i = 0; i < outputIds.size(); i++) {
+		for (GeneralNeuron n : outputNeurons) {
 
-			if (stabilizationDelta < neurons.get(outputIds.get(i)).getDelta()) {
+			if (!n.isStable()) {
 				return false;
 			}
 		}
-
 		return true;
 	}
 }
