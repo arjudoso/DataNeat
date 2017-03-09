@@ -15,75 +15,113 @@
  *******************************************************************************/
 package dataneat.main;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Scanner;
+
+import org.datavec.api.records.reader.RecordReader;
+import org.datavec.api.records.reader.impl.csv.CSVRecordReader;
+import org.datavec.api.split.FileSplit;
+import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
+import org.nd4j.linalg.dataset.api.DataSet;
+import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 
 import dataneat.engine.Engine;
 import dataneat.parameterTuner.Tuner;
 import dataneat.utils.PropertiesHolder;
 
 public class Main {
-	private static boolean done = false;
 
-	public static void main(String[] args) throws IOException, InterruptedException {
+	// private static Logger log = LoggerFactory.getLogger(Main.class);
 
-		Scanner sc = new Scanner(System.in);
-
-		while (!done) {
-			printMenu();
-			Integer selection = sc.nextInt();
-			executeSelection(selection);
-		}
-		sc.close();
+	public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
+		 buildAndRun();
+		//runTuner();
 	}
 
-	private static void printMenu() {
-		System.out.println();
-		System.out.println("Main Menu");
-		System.out.println("0: Exit");
-		System.out.println("1: Build and run evolution from parameter files");
-		System.out.println("2: Run parameter tuner");
-	}
-
-	private static void executeSelection(Integer selection) {
-
-		switch (selection) {
-		case 0:
-			done = true;
-			break;
-		case 1:
-			buildAndRun();
-			break;
-		case 2:
-			runTuner();
-			break;
-		default:
-			break;
-		}
-	}
-
-	private static void buildAndRun() {
+	private static void buildAndRun() throws FileNotFoundException, IOException, InterruptedException {
 		// configure parameters
+
+		System.out.println(("loading properties"));
 		PropertiesHolder p = new PropertiesHolder();
 		p.load();
 
-		// build engine & run it
+		// First: get the dataset using the record reader. CSVRecordReader
+		// handles loading/parsing
+		System.out.println("reading csv");
+		int numLinesToSkip = 1;
+		String delimiter = ",";
+		RecordReader recordReader = new CSVRecordReader(numLinesToSkip, delimiter);
+		recordReader.initialize(new FileSplit(new File("datasets/xor.csv")));
+
+		// Second: the RecordReaderDataSetIterator handles conversion to DataSet
+		// objects, ready for use in neural network
+		int labelIndex = 2; // 3 values in each row of the xor CSV: 2 input
+							// features followed by an integer label (class)
+							// index.
+		int numOuts = 1;
+		int batchSize = 4;
+		int numInputs = 2;
+		int epochs = 100;
+
+		DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, labelIndex,
+				true);
+
 		Engine engine = new Engine(p);
-		engine.autoConfig();
-		engine.run();
+		engine.autoConfig(numInputs, numOuts, batchSize);
+
+		for (int i = 0; i < epochs; i++) {
+			System.out.println("Epoch " + i);
+			while (iterator.hasNext()) {
+				DataSet train = iterator.next();
+				engine.run(train);
+			}
+			iterator.reset();
+			engine.reset();
+		}
+
+		engine.displayBestTrainingNetwork();
 		engine.getRunData().toCSV();
-		engine.generatePredictions();
-		engine.printChrom();
+		System.out.println(engine.generatePredictions(iterator.next().getFeatures(), "train").toString());
 	}
 
-	private static void runTuner() {
+	private static void runTuner() throws IOException, InterruptedException {
 		// configure parameters
+
+		System.out.println(("loading properties"));
 		PropertiesHolder p = new PropertiesHolder();
 		p.load();
+
+		// First: get the dataset using the record reader. CSVRecordReader
+		// handles loading/parsing
+		System.out.println("reading csv");
+		int numLinesToSkip = 1;
+		String delimiter = ",";
+		RecordReader recordReader = new CSVRecordReader(numLinesToSkip, delimiter);
+		recordReader.initialize(new FileSplit(new File("datasets/xor.csv")));
+
+		// Second: the RecordReaderDataSetIterator handles conversion to DataSet
+		// objects, ready for use in neural network
+		int labelIndex = 2; // 3 values in each row of the xor CSV: 2 input
+							// features followed by an integer label (class)
+							// index.
+		int numOuts = 1;
+		int batchSize = 4;
+		int numInputs = 2;
+		int epochs = 100;
+		int tunerRounds = 10;
+
+		DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, labelIndex,
+				true);
 		Engine engine = new Engine(p);
-		
+		engine.autoConfig(numInputs, numOuts, batchSize).runMulti(iterator, epochs);
 		Tuner tuner = new Tuner(p);
-		tuner.runTuner(engine);
+
+		for (int i = 0; i < tunerRounds; i++) {
+			tuner.runTuner(engine, iterator, epochs);
+			engine.displayBestTrainingNetwork();
+			engine.tuningReset();
+		}
 	}
 
 }

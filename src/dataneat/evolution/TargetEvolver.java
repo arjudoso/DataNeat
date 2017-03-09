@@ -15,11 +15,11 @@
  *******************************************************************************/
 package dataneat.evolution;
 
-import dataneat.data.TargetDataset;
+import org.nd4j.linalg.dataset.api.DataSet;
 
 public interface TargetEvolver {
 
-	public void preEvolution(Population pop, TargetDataset data);
+	public void preEvolution(Population pop, DataSet data);
 	
 	//executes operators on a population
 	public void evolve(Population pop);

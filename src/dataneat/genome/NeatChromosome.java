@@ -18,12 +18,15 @@ package dataneat.genome;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.graphstream.graph.Graph;
+import org.graphstream.graph.implementations.SingleGraph;
+
 import dataneat.base.BaseNeat;
 import dataneat.innovation.InnovationDatabase;
 import dataneat.utils.PropertiesHolder;
 import dataneat.utils.RandGen;
 
-public class NeatChromosome extends BaseNeat {
+public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosome> {
 	private static final String MAXIMIZE = "maximize";
 	private static int chromCounter = 0;
 
@@ -41,17 +44,16 @@ public class NeatChromosome extends BaseNeat {
 	public NeatChromosome(PropertiesHolder p) {
 		super(p);
 		init();
-		
+
 		neurons = new NeuronDB();
 	}
 
 	public NeatChromosome(int inputs, int outputs, boolean connected, PropertiesHolder p) {
 		super(p);
 		init();
-		// create a new chromosome with the given number of IO, fully connected,
+		// create a new chromosome with the given number of IO,
 		// with random link weights
 		neurons = new NeuronDB();
-		
 
 		// inputs & outputs get negative ids to differentiate them
 		int neuronId = -1;
@@ -81,25 +83,19 @@ public class NeatChromosome extends BaseNeat {
 				}
 			}
 		} else {
-			//need at least 1 connection for NEAT to function
-			
-			//connect a random input to a random output
+			// need at least 1 connection for NEAT to function
+
+			// connect a random input to a random output
 			NeuronGene in = neurons.randomInput();
 			NeuronGene out = neurons.randomOutput();
-			connectNodes (in.getID(), out.getID(), 0, true);			
+			connectNodes(in.getID(), out.getID(), 0, true);
 		}
-
-		// connect Bias to Outputs
-		/*
-		 * for (Integer outputId : neurons.getOutputIds()) {
-		 * connectNodes(neurons.getBiasId(), outputId, 0, true); }
-		 */
 	}
 
 	public NeatChromosome(NeatChromosome parent) {
-		super(parent.getHolder());		
+		super(parent.getHolder());
 		init();
-		
+
 		this.species = parent.getSpecies();
 		this.fitness = parent.getFitness();
 		this.adjustedFitness = parent.getAdjustedFitness();
@@ -136,13 +132,13 @@ public class NeatChromosome extends BaseNeat {
 		id = chromCounter;
 		chromCounter++;
 	}
-	
+
 	private void init() {
 		assignID();
 		maximize = Boolean.parseBoolean(getParams().getProperty(MAXIMIZE));
 		initFitness();
 	}
-	
+
 	private void initFitness() {
 		if (!maximize) {
 			this.adjustedFitness = Double.MAX_VALUE;
@@ -211,7 +207,7 @@ public class NeatChromosome extends BaseNeat {
 
 			// no valid connection formed if we get down here, repeat loop
 		}
-		
+
 		return false;
 	}
 
@@ -259,7 +255,7 @@ public class NeatChromosome extends BaseNeat {
 	}
 
 	private void calculateSplits(NeuronType type, int splitLinkId) {
-		// determine the vertical position of a neuron in the network. Useful
+		// determine the position of a neuron in the network. Useful
 		// for visual rendering, and for determining if a connection is forward
 		// or recurrent.
 		NeuronGene neuron = neurons.getById(splitLinkId);
@@ -285,7 +281,7 @@ public class NeatChromosome extends BaseNeat {
 			neuron.setSplitY(((end - start) / 2) + start);
 		}
 	}
-	
+
 	public void sortBySplitY() {
 		neurons.sortBySplitY();
 	}
@@ -297,8 +293,8 @@ public class NeatChromosome extends BaseNeat {
 
 	public void mutateAddNode() {
 		// System.out.println("addNode");
-		// if called, assume this chromosome has been selected for node addition		
-		
+		// if called, assume this chromosome has been selected for node addition
+
 		int splitLink = 0;
 
 		// grab a random link
@@ -330,6 +326,26 @@ public class NeatChromosome extends BaseNeat {
 		for (LinkGene gene : links) {
 			gene.perturbWeight(power);
 		}
+	}
+
+	public Graph buildGraph() {
+		String styleSheet = "node.HIDDEN {" + "	fill-color: black;" + "}" + "node.INPUT {" + "	fill-color: blue;" + "}"
+				+ "node.OUTPUT {" + "	fill-color: red;" + "}" + "node.BIAS {" + "	fill-color: green;" + "}";
+
+		Graph graph = new SingleGraph(Integer.toString(id));
+		graph.addAttribute("ui.stylesheet", styleSheet);
+		for (NeuronGene n : neurons.getNeuronList()) {
+			graph.addNode(Integer.toString(n.getID())).addAttribute("ui.class", n.getNeuronType().name());
+		}
+
+		for (LinkGene l : links) {
+			if (l.isEnabled()) {
+				graph.addEdge(l.getInnovationID().toString(), Integer.toString(l.getFromNeuronID()),
+						Integer.toString(l.getToNeuronID()), true);				
+			}
+		}
+
+		return graph;
 	}
 
 	public int getSpecies() {
@@ -415,5 +431,13 @@ public class NeatChromosome extends BaseNeat {
 
 	public void setTestFitness(double testFitness) {
 		this.testFitness = testFitness;
+	}
+
+	@Override
+	public int compareTo(NeatChromosome o) {
+		//Note: not consistent with equals
+		//will cause lists of chroms to sort smallest adjusted fitness to largest
+		//this means best fitness is at the end of the list
+		return Double.compare(this.adjustedFitness, o.adjustedFitness);
 	}
 }

@@ -1,10 +1,9 @@
 # DataNeat
-java implementation of NEAT
+java implementation of NEAT http://nn.cs.utexas.edu/?neat
 
-This is a java implementation of Neat designed with suprivised learning from csv data files in mind.
-See below link for NEAT overview:
-http://nn.cs.utexas.edu/?neat
+Currently in the process of turning this into a Java library.
 
-Notes on running it:
-Everything is configured from the default parameters file.  Don't use the appProps file, that is specifically for the parameter tuner.
-There are a few built in datasets you can use to try things out.
+For now, you can download the source code and run the examples in the main class.  A xor experiemnt and a parameter tuner experiment are demonstrated.
+
+Installation:
+This project uses Nd4j.  You will need to follow the installation steps on Nd4j's website http://nd4j.org/getstarted.html

@@ -15,47 +15,16 @@
  *******************************************************************************/
 package dataneat.fitness;
 
-import java.util.List;
-
-import dataneat.data.TableData;
-import dataneat.data.TargetDataset;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.api.ops.impl.transforms.SoftMax;
+import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 public class MultiLogLoss implements TargetFitnessFunction {
 
 	@Override
-	public double computeFitness(TargetDataset data, TableData outputs) {
-		double accum = 0.0;
-		double max = 0.9999999999;
-		double min = 0.0000000001;
-
-		for (int i = 0; i < outputs.numRows(); i++) {
-			// iterate over number of training examples
-
-			// get the ideal and actual outputs for this example
-			List<Double> ideal = data.getIdealRow(i);
-			List<Double> out = outputs.getRow(i);
-
-			for (int j = 0; j < out.size(); j++) {
-				// iterate over number of classes
-
-				double temp = 0;
-				// only compute if we are on the correct label
-				if (ideal.get(j) == 1) {
-					temp = out.get(j);
-
-					if (temp > max) {
-						temp = max;
-					}
-					if (temp < min) {
-						temp = min;
-					}
-					accum += Math.log(temp);
-				}
-			}
-
-		}
-
-		return -(accum / outputs.numRows());
+	public double computeFitness(INDArray labels, INDArray outputs, int batchSize) {				
+		INDArray z = Nd4j.getExecutioner().execAndReturn(new SoftMax(outputs));		
+		return LossFunctions.score(labels, LossFunctions.LossFunction.MCXENT, z, 0.0, 0.0, false)/batchSize;		
 	}
-
 }

@@ -15,12 +15,13 @@
  *******************************************************************************/
 package dataneat.transferFunction;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.ops.transforms.Transforms;
+
 public class RectifiedLinear implements TransferFunction {
 
 	@Override
-	public double compute(double input) {
-		
-		return Math.max(0.0, input);
+	public INDArray compute(INDArray input) {		
+		return Transforms.relu(input);
 	}
-
 }

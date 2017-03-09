@@ -15,11 +15,10 @@
  *******************************************************************************/
 package dataneat.fitness;
 
-import dataneat.data.TableData;
-import dataneat.data.TargetDataset;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
 public interface TargetFitnessFunction {
 
 	//fitness functions take the network output as a param and return a fitness value
-	public double computeFitness(TargetDataset data, TableData outputs);
+	public double computeFitness(INDArray labels, INDArray outputs, int batchSize);
 }

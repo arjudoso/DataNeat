@@ -15,30 +15,13 @@
  *******************************************************************************/
 package dataneat.fitness;
 
-import dataneat.data.TableData;
-import dataneat.data.TargetDataset;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.lossfunctions.LossFunctions;
 
 public class RMSE implements TargetFitnessFunction {
-	
-	public RMSE() {
-	}
 
 	@Override
-	public double computeFitness(TargetDataset data, TableData outputs) {
-		// currently only works for networks with a single output
-		double rmse = 0.0;
-		double mse = 0.0;
-		double accum = 0.0;
-		
-		for (int i = 0; i < outputs.numRows(); i++) {
-
-			accum += Math.pow((data.getIdealRow(i).get(0) - outputs.getRow(i).get(0)), 2);
-		}
-		
-		mse = accum / outputs.numRows();
-
-		rmse = Math.sqrt(mse);
-					
-		return rmse;
-	}
+	public double computeFitness(INDArray labels, INDArray outputs, int batchSize) {
+		return  Math.sqrt(LossFunctions.score(labels, LossFunctions.LossFunction.MSE, outputs, 0.0, 0.0, false));			
+	}	
 }

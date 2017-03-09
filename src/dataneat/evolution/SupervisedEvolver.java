@@ -18,8 +18,10 @@ package dataneat.evolution;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.api.DataSet;
+
 import dataneat.base.BaseNeat;
-import dataneat.data.TargetDataset;
 import dataneat.genome.NeatChromosome;
 import dataneat.operators.AddLinkOperator;
 import dataneat.operators.AddNodeOperator;
@@ -29,22 +31,28 @@ import dataneat.operators.MutationOperator;
 import dataneat.operators.NeatCrossoverOperator;
 import dataneat.operators.SpeciationOperator;
 import dataneat.operators.TargetFitnessOperator;
+import dataneat.operators.FeedForwardOperator;
+import dataneat.operators.RecurrentOperator;
 import dataneat.speciation.Species;
 import dataneat.utils.PropertiesHolder;
 
 public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
 
-	// supervised learning, uses a target fitness operator/function
-
+	private static final String CALC_MODE = "calcMode";
+	// supervised learning, uses a target fitness operator/function	
+	
 	private List<MutationOperator> mutationOperators = new ArrayList<MutationOperator>();
 	private SpeciationOperator speciator;
 	private TargetFitnessOperator fitnessOperator;
 	private NeatCrossoverOperator crossOver;
-	private CloneOperator cloner;
+	private CloneOperator cloner;	
+	private INDArray stabilMatrix;
+	private Integer calculationMode = 0;
 
-	public SupervisedEvolver(PropertiesHolder p) {
-		super(p);
-
+	public SupervisedEvolver(PropertiesHolder p, INDArray stabilMatrix) {
+		super(p);		
+		calculationMode = Integer.parseInt(getParams().getProperty(CALC_MODE));
+		this.stabilMatrix = stabilMatrix;		
 		initMutationOperators();
 	}
 
@@ -54,13 +62,26 @@ public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
 		mutationOperators.add(new AddLinkOperator(getHolder()));
 		mutationOperators.add(new LinkWeightOperator(getHolder()));
 		speciator = new SpeciationOperator(getHolder());
-		fitnessOperator = new TargetFitnessOperator(getHolder());
+		
+		switch (calculationMode) {
+		case 0:
+			fitnessOperator = new FeedForwardOperator(getHolder(), stabilMatrix);
+			break;
+		case 1:
+			fitnessOperator = new RecurrentOperator(getHolder(), stabilMatrix);
+			break;
+		default:
+			fitnessOperator = new FeedForwardOperator(getHolder(), stabilMatrix);
+			break;
+		}
+		
 		crossOver = new NeatCrossoverOperator(getHolder());
 		cloner = new CloneOperator();
 	}
 
 	@Override
-	public void preEvolution(Population pop, TargetDataset data) {
+	//shape of data = (batchSize, numInputs) 
+	public void preEvolution(Population pop, DataSet data) {
 		// speciate, clears old species list and creates new ones based on
 		// current population
 		speciator.operate(pop, pop.getSpeciesDB());
@@ -113,7 +134,9 @@ public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
 			}
 
 			// add offspring to the new generation
-			pop.addAll(offspringList);
+			for (NeatChromosome chrom : offspringList) {
+				pop.add(chrom);
+			}			
 		}
 
 		pop.correctSize();
@@ -128,6 +151,10 @@ public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
 		// add elites to next gen
 		pop.addElites();
 
+	}
+
+	public void setStabilMatrix(INDArray stabilMatrix) {
+		this.stabilMatrix = stabilMatrix;		
 	}
 
 }

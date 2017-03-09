@@ -15,12 +15,13 @@
  *******************************************************************************/
 package dataneat.transferFunction;
 
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.ops.transforms.Transforms;
+
 public class SigmoidFunction implements TransferFunction {
 
 	@Override
-	public double compute(double input) {
-		
-		return (1/(1+Math.exp(-input)));
+	public INDArray compute(INDArray input) {			
+		return Transforms.sigmoid(input);
 	}
-
 }
