@@ -23,7 +23,7 @@
 		<logback.version>1.1.7</logback.version>
 		<jfreechart.version>1.0.13</jfreechart.version>
 		<jcommon.version>1.0.23</jcommon.version>
-		
+
 		<exec-maven-plugin.version>1.4.0</exec-maven-plugin.version>
 		<maven.minimum.version>3.3.1</maven.minimum.version>
 		<scala.binary.version>2.11</scala.binary.version>
@@ -85,43 +85,25 @@
 	</dependencies>
 
 	<build>
-	<resources>
-     <resource>
-       <directory>src/main/resources</directory>
-     </resource>
-   </resources>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+			</resource>
+		</resources>
 		<plugins>
+
 			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-shade-plugin</artifactId>
-				<version>3.0.0</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>shade</goal>
-						</goals>
-						<configuration>
-							<filters>
-								<filter>
-									<artifact>*:*</artifact>
-									<excludes>
-										<exclude>org/datanucleus/**</exclude>
-										<exclude>META-INF/*.SF</exclude>
-										<exclude>META-INF/*.DSA</exclude>
-										<exclude>META-INF/*.RSA</exclude>
-									</excludes>
-								</filter>
-							</filters>
-							<transformers>
-								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>dataneat.main.Iris</mainClass>
-								</transformer>
-							</transformers>
-						</configuration>
-					</execution>
-				</executions>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>dataneat.main.Iris</mainClass>
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
+				</configuration>
 			</plugin>
 
 			<plugin>
