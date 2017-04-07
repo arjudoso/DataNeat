@@ -18,19 +18,19 @@ package dataneat.genome;
 import dataneat.utils.RandGen;
 
 public class LinkGene {
-
-	// using the Integer type here makes sorting the links by innovation ID
-	// during crossover simpler
-	private Integer innovationID = 0;
+	
+	private int innovationID = 0;
 
 	private int fromNeuronID = 0, toNeuronID = 0;
 	private double weight = 0.0, maxWeight = 10.0, minWeight = -10.0;
 	private boolean isEnabled = true, isBias = false, isAlreadySplit = false;
 
 	public LinkGene() {
+		
 	}
 	
 	public LinkGene(LinkGene parentLink) {
+		
 		this.innovationID = parentLink.getInnovationID();
 		this.fromNeuronID = parentLink.fromNeuronID;
 		this.toNeuronID = parentLink.toNeuronID;
@@ -145,6 +145,27 @@ public class LinkGene {
 
 	public void setAlreadySplit(boolean isAlreadySplit) {
 		this.isAlreadySplit = isAlreadySplit;
+	}	
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof LinkGene)) {
+			return false;
+		}
+		
+		LinkGene l = (LinkGene)o;
+		if (Integer.compare(l.innovationID,this.innovationID) == 0) {
+			return true;
+		}else {
+			return false;
+		}		
+	}
+	
+	@Override
+	public int hashCode() {
+		int result = 17;
+		result = 31 * result + innovationID;
+		return result;
 	}
 
 }

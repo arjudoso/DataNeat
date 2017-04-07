@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dataneat.base.BaseNeat;
+import dataneat.genome.LinkDB;
 import dataneat.genome.LinkGene;
 import dataneat.genome.NeatChromosome;
 import dataneat.speciation.Species;
@@ -153,16 +154,16 @@ public class NeatCrossoverOperator extends BaseNeat {
 		// Get the link genes, which will be used to execute crossover
 		// ------------------
 
-		List<LinkGene> bestLinks = bestMate.getLinks();
-		List<LinkGene> worstLinks = worstMate.getLinks();
-		List<LinkGene> babyLinks = baby.getLinks();
+		LinkDB bestLinks = bestMate.getLinks();
+		LinkDB worstLinks = worstMate.getLinks();
+		LinkDB babyLinks = baby.getLinks();
 
 		// the crossover procedure requires the lists sorted in order of
 		// increasing innovation ID
 
-		bestLinks.sort((link1, link2) -> link1.getInnovationID().compareTo(link2.getInnovationID()));
+		bestLinks.sortById();
 
-		worstLinks.sort((link1, link2) -> link1.getInnovationID().compareTo(link2.getInnovationID()));
+		worstLinks.sortById();
 
 		// create 2 indices to iterate over the parents
 		// -------------------
@@ -174,13 +175,13 @@ public class NeatCrossoverOperator extends BaseNeat {
 
 			if (worstLinksIndex == worstLinks.size()) {
 				// we ran out of genes to examine in the worst parent
-				boolean isDisabled = checkGeneDisabled(bestLinks.get(bestLinksIndex));
+				boolean isDisabled = checkGeneDisabled(bestLinks.getByIndex(bestLinksIndex));
 
 				if (isDisabled) {
 
 					if (RandGen.rand.nextDouble() < enableChance) {
 
-						babyLinks.get(bestLinksIndex).setEnabled(true);
+						babyLinks.getByIndex(bestLinksIndex).setEnabled(true);
 					}
 				}
 
@@ -189,14 +190,14 @@ public class NeatCrossoverOperator extends BaseNeat {
 
 				// innovation Ids equal
 				// --------------------------
-				if (bestLinks.get(bestLinksIndex).getInnovationID()
-						.equals(worstLinks.get(worstLinksIndex).getInnovationID())) {
+				if (bestLinks.getByIndex(bestLinksIndex).getInnovationID()
+						.equals(worstLinks.getByIndex(worstLinksIndex).getInnovationID())) {
 
 					// check if gene is disabled in either parent and save as a
 					// flag
 					// before making modifications to genome.
-					boolean isDisabled = checkGeneDisabled(bestLinks.get(bestLinksIndex),
-							worstLinks.get(worstLinksIndex));
+					boolean isDisabled = checkGeneDisabled(bestLinks.getByIndex(bestLinksIndex),
+							worstLinks.getByIndex(worstLinksIndex));
 
 					// need to know if the link has previously been split, we
 					// don't
@@ -205,14 +206,14 @@ public class NeatCrossoverOperator extends BaseNeat {
 					// could be split again by the mutation operator, resulting
 					// in
 					// multiple nodes splitting the same link
-					boolean isSplit = bestLinks.get(bestLinksIndex).isAlreadySplit();
+					boolean isSplit = bestLinks.getByIndex(bestLinksIndex).isAlreadySplit();
 
 					if (RandGen.rand.nextDouble() > 0.5) {
 
 						// if this executes, then replace the baby's link with
 						// the
 						// one from the other parent, otherwise just leave it be
-						LinkGene link = new LinkGene(worstLinks.get(worstLinksIndex));
+						LinkGene link = new LinkGene(worstLinks.getByIndex(worstLinksIndex));
 						link.setAlreadySplit(isSplit);
 						babyLinks.set(bestLinksIndex, link);
 					}
@@ -224,9 +225,9 @@ public class NeatCrossoverOperator extends BaseNeat {
 
 						if (RandGen.rand.nextDouble() < enableChance) {
 
-							babyLinks.get(bestLinksIndex).setEnabled(true);
+							babyLinks.getByIndex(bestLinksIndex).setEnabled(true);
 						} else {
-							babyLinks.get(bestLinksIndex).setEnabled(false);
+							babyLinks.getByIndex(bestLinksIndex).setEnabled(false);
 						}
 					}
 
@@ -236,8 +237,8 @@ public class NeatCrossoverOperator extends BaseNeat {
 					bestLinksIndex++;
 					worstLinksIndex++;
 
-				} else if (bestLinks.get(bestLinksIndex).getInnovationID()
-						.compareTo(worstLinks.get(worstLinksIndex).getInnovationID()) > 0) {
+				} else if (bestLinks.getByIndex(bestLinksIndex).getInnovationID()
+						.compareTo(worstLinks.getByIndex(worstLinksIndex).getInnovationID()) > 0) {
 
 					// innovation IDs are being walked in ascending order. If
 					// bestlinks > worstlinks, it means there are linkgenes in
@@ -270,13 +271,13 @@ public class NeatCrossoverOperator extends BaseNeat {
 					// is,
 					// since the baby was originally a copy of the best parent.
 
-					boolean isDisabled = checkGeneDisabled(bestLinks.get(bestLinksIndex));
+					boolean isDisabled = checkGeneDisabled(bestLinks.getByIndex(bestLinksIndex));
 
 					if (isDisabled) {
 
 						if (RandGen.rand.nextDouble() < enableChance) {
 
-							babyLinks.get(bestLinksIndex).setEnabled(true);
+							babyLinks.getByIndex(bestLinksIndex).setEnabled(true);
 						}
 					}
 
@@ -285,7 +286,7 @@ public class NeatCrossoverOperator extends BaseNeat {
 			}
 		}
 
-		baby.setLinks(babyLinks);
+		//baby.setLinks(babyLinks);
 
 		return baby;
 	}

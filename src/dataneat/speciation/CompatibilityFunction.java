@@ -15,10 +15,8 @@
  *******************************************************************************/
 package dataneat.speciation;
 
-import java.util.List;
-
 import dataneat.base.BaseNeat;
-import dataneat.genome.LinkGene;
+import dataneat.genome.LinkDB;
 import dataneat.genome.NeatChromosome;
 import dataneat.utils.PropertiesHolder;
 
@@ -51,11 +49,11 @@ public class CompatibilityFunction extends BaseNeat {
 		}
 
 		// get the links from the 2 genomes, for use in the subroutines
-		List<LinkGene> firstLinks = ((NeatChromosome) firstGenome).getLinks();
-		List<LinkGene> secondLinks = ((NeatChromosome) secondGenome).getLinks();
+		LinkDB firstLinks = ((NeatChromosome) firstGenome).getLinks();
+		LinkDB secondLinks = ((NeatChromosome) secondGenome).getLinks();
 
-		firstLinks.sort((link1, link2) -> link1.getInnovationID().compareTo(link2.getInnovationID()));
-		secondLinks.sort((link1, link2) -> link1.getInnovationID().compareTo(link2.getInnovationID()));
+		firstLinks.sortById();
+		secondLinks.sortById();
 
 		// calculate the average weight differences of matching
 		// genes between the 2 genomes, and num Excess & Disjoint
@@ -69,21 +67,21 @@ public class CompatibilityFunction extends BaseNeat {
 
 			// innovation Ids equal
 			// --------------------------
-			if (firstLinks.get(firstLinksIndex).getInnovationID() == secondLinks.get(secondLinksIndex)
+			if (firstLinks.getByIndex(firstLinksIndex).getInnovationID() == secondLinks.getByIndex(secondLinksIndex)
 					.getInnovationID()) {
 
 				numMatching++;
 
-				double weight1 = firstLinks.get(firstLinksIndex).getWeight();
+				double weight1 = firstLinks.getByIndex(firstLinksIndex).getWeight();
 
-				double weight2 = secondLinks.get(secondLinksIndex).getWeight();
+				double weight2 = secondLinks.getByIndex(secondLinksIndex).getWeight();
 
 				cumlativeWeightDelta += Math.abs(weight1 - weight2);
 
 				firstLinksIndex++;
 				secondLinksIndex++;
 
-			} else if (firstLinks.get(firstLinksIndex).getInnovationID() > secondLinks.get(secondLinksIndex)
+			} else if (firstLinks.getByIndex(firstLinksIndex).getInnovationID() > secondLinks.getByIndex(secondLinksIndex)
 					.getInnovationID()) {
 
 				numDisjoint++;

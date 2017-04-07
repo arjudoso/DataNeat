@@ -61,7 +61,7 @@ public class Species extends BaseNeat {
 		NeatChromosome currentBest = members.get(0);
 		fitnessMonitor.updateTraining(currentBest);
 
-		if (fitnessMonitor.trainingStop()) {
+		if (fitnessMonitor.isTrainingStag()) {
 			stagnant = true;
 		}
 	}

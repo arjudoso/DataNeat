@@ -29,7 +29,7 @@ public class NeuronDB {
 	private List<Integer> inputIds = new ArrayList<Integer>();
 	private List<Integer> outputIds = new ArrayList<Integer>();
 	private List<Integer> hiddenIds = new ArrayList<Integer>();
-	private int biasId;
+	private int biasId = 0;
 
 	public NeuronDB() {
 	}
@@ -55,42 +55,35 @@ public class NeuronDB {
 			break;
 		case HIDDEN:
 			hiddenIds.add(neuron.getID());
+			break;
 		case BIAS:
 			biasId = neuron.getID();
+			break;
 		default:
 			break;
 		}
-	}
+	}	
 
-	public void addAll(NeuronDB neuronsToAdd) {
-
-		for (NeuronGene gene : neuronsToAdd.getNeuronList()) {
-			addNeuron(gene, gene.getNeuronType());
-		}
-	}
-
-	public void removeNeuron(int id) {
-
-		NeuronGene neuron = neuronMap.get(id);
-
+	public void removeNeuron(Integer id) {		
+		NeuronGene neuron = neuronMap.get(id);		
 		switch (neuron.getNeuronType()) {
 		case INPUT:
-			inputIds.remove(neuron);
+			inputIds.remove(id);
 			break;
 		case OUTPUT:
-			outputIds.remove(neuron);
+			outputIds.remove(id);
 			break;
 		case HIDDEN:
-			hiddenIds.remove(neuron);
+			hiddenIds.remove(id);			
+			break;
 		case BIAS:
-			biasId = Integer.MIN_VALUE;
+			biasId = 0;
+			break;
 		default:
 			break;
 		}
-
 		neuronMap.remove(id);
-
-		neuronList.remove(neuron);
+		neuronList.remove(neuron);		
 	}
 	
 	public void sortBySplitY() {
@@ -120,23 +113,7 @@ public class NeuronDB {
 
 	public NeuronGene getById(int id) {
 		return neuronMap.get(id);
-	}
-
-	public List<NeuronGene> getNeuronList() {
-		return neuronList;
-	}
-
-	public void setNeuronList(List<NeuronGene> neuronList) {
-		this.neuronList = neuronList;
-	}
-
-	public Map<Integer, NeuronGene> getNeuronMap() {
-		return neuronMap;
-	}
-
-	public void setNeuronMap(Map<Integer, NeuronGene> neuronMap) {
-		this.neuronMap = neuronMap;
-	}
+	}		
 
 	public int sizeWithBias() {
 		// return size of all neurons, including bias neuron, the network

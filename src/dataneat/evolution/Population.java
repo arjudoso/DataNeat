@@ -63,14 +63,27 @@ public class Population extends BaseNeat {
 			NeatChromosome chrom = new NeatChromosome(numInputs, numOutputs, connected, getHolder());
 			add(chrom);
 		}
+		
+		initMonitor();
+	}
+	
+	private void initMonitor() {
+		fitnessMonitor.updateTraining(chromosomes.get(0));
+		fitnessMonitor.updateTest(chromosomes.get(0));
 	}
 	
 	public void add(NeatChromosome chrom) {
 		//wrapper for adding chroms to the arrayList.
-		//all add operations must go through this method
-		fitnessMonitor.updateTest(chrom);
+		//all add operations must go through this method		
 		fitnessMonitor.updateTraining(chrom);
 		chromosomes.add(chrom);
+	}
+	
+	public void updateTestBest() {		
+		for (NeatChromosome chrom : chromosomes) {			
+			fitnessMonitor.updateTest(chrom);			
+		}
+		System.out.println(fitnessMonitor.getBestTestFitness().getTestFitness());
 	}
 
 	private void addRandom(int amount) {
@@ -185,5 +198,9 @@ public class Population extends BaseNeat {
 
 	public List<NeatChromosome> getElites() {
 		return elites;
+	}
+	
+	public FitnessMonitor getMonitor() {
+		return fitnessMonitor;
 	}
 }

@@ -16,9 +16,9 @@
 package dataneat.operators;
 
 import java.util.List;
+
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.api.DataSet;
-import org.nd4j.linalg.factory.Nd4j;
 
 import dataneat.base.BaseNeat;
 import dataneat.fitness.TargetFitnessFunction;
@@ -26,34 +26,30 @@ import dataneat.genome.NeatChromosome;
 import dataneat.phenotype.Network;
 import dataneat.utils.PropertiesHolder;
 
-public class TestFitnessOperator extends BaseNeat implements TargetFitnessOperator {
-	// almost identical to the fitness operator, but this class instead deals
-	// with the test dataset
+public class PrevTimeFitnessOperator extends BaseNeat implements TargetFitnessOperator{
 
 	private static final String FITNESS_FUNCTION = "fitnessFunction";
-	private static final String STABIL_THRESH = "stabilizationDelta";
-	private static final String BATCH_SIZE = "batchSize";
-	
+	private static final String MAXIMIZE = "maximize";		
+	private boolean maximize = true;		
 	private TargetFitnessFunction fitnessFunction;
 	private INDArray stabil;
-	private double stabilDelta = 0.01;	
-	private Integer batchSize = 50;
 
-	public TestFitnessOperator(PropertiesHolder p) {
+	public PrevTimeFitnessOperator(PropertiesHolder p, INDArray stabilMatrix) {
 		super(p);
-		stabilDelta = Double.parseDouble(getParams().getProperty(STABIL_THRESH));		
-		batchSize = Integer.parseInt(getParams().getProperty(BATCH_SIZE));		
+		stabil = stabilMatrix;
+		maximize = Boolean.parseBoolean(getParams().getProperty(MAXIMIZE));		
 
 		try {
 			fitnessFunction = (TargetFitnessFunction) Class.forName(getParams().getProperty(FITNESS_FUNCTION))
 					.newInstance();
 
-		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {			
+		} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 
 	}
 
+	
 	public void operate(List<NeatChromosome> population, DataSet data) {
 
 		if (population == null) {
@@ -62,25 +58,52 @@ public class TestFitnessOperator extends BaseNeat implements TargetFitnessOperat
 			// -----------------------------------------------
 			return;
 		}
-		
-		stabil= Nd4j.zeros(data.numExamples(), 1);
-		stabil.addi(stabilDelta);
-		batchSize = data.numExamples();
-		getParams().setProperty(BATCH_SIZE, this.batchSize.toString());
 
+		// do the fitness evaluations on each chromosome
 		population.parallelStream().forEach(chrom -> evaluate(chrom, data));
+
+		// we need the worst fitness in the population, this depends on if
+		// fitness is maximized or minimized
+		double worstFitness;
+		if (maximize) {
+			worstFitness = Double.MAX_VALUE;
+			for (NeatChromosome chrom : population) {
+				if (chrom.getFitness() < worstFitness) {
+					worstFitness = chrom.getFitness();
+				}
+			}
+		} else {
+			// RMSE is minimized, so the worst fitness is the highest value
+			worstFitness = Double.MIN_VALUE;
+			for (NeatChromosome chrom : population) {
+				if (chrom.getFitness() > worstFitness) {
+					worstFitness = chrom.getFitness();
+				}
+			}
+		}
+
+		// now replace raw fitness with distance of each fitness from the
+		// worstfitness of the population. this means that chroms with low RMSE
+		// will have the largest distance from the worstFitness, and thus higher
+		// adjusted fitness. We need this because NEAT expects fitness to be
+		// maximized
+
+		for (NeatChromosome chrom : population) {
+			chrom.setAdjustedFitness(Math.abs(worstFitness - chrom.getFitness()));
+		}
 	}
 
 	private void evaluate(NeatChromosome chrom, DataSet data) {
 		// this function evaluates a single chromosome
 
 		// create phenotype
-		Network net = new Network(chrom, getHolder(), stabil);
+		Network net = new Network(chrom, getHolder(),stabil);		
 
 		// compute on entire training set
 		net.computeNetPrevTimestep(data.getFeatures());
+				
 		// set fitness
-		double testFitness = fitnessFunction.computeFitness(data.getLabels(), net.getOutput());
-		chrom.setTestFitness(testFitness);
-	}
+		double fitness = fitnessFunction.computeFitness(data.getLabels(), net.getOutput());
+		chrom.setFitness(fitness);
+	}	
 }

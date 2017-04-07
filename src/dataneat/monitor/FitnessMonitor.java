@@ -24,7 +24,7 @@ public class FitnessMonitor extends BaseNeat {
 
 	public void updateTraining(NeatChromosome currentBest) {
 		if (bestTrainingFitness == null) {
-			bestTrainingFitness = currentBest;
+			bestTrainingFitness = new NeatChromosome(currentBest);
 		} else {
 			if (maximize) {
 				maximizeUpdateTrain(currentBest);
@@ -36,7 +36,7 @@ public class FitnessMonitor extends BaseNeat {
 
 	public void updateTest(NeatChromosome currentBest) {
 		if (bestTestFitness == null) {
-			bestTestFitness = currentBest;
+			bestTestFitness = new NeatChromosome(currentBest);
 		} else {
 			if (maximize) {
 				maximizeUpdateTest(currentBest);
@@ -48,59 +48,59 @@ public class FitnessMonitor extends BaseNeat {
 
 	private void maximizeUpdateTrain(NeatChromosome currentBest) {
 		if (bestTrainingFitness.getFitness() < (currentBest.getFitness() - delta)) {
-			bestTrainingFitness = currentBest;
+			bestTrainingFitness = new NeatChromosome(currentBest);
 			resetTraining();
 		} else {
 			trainingCounter++;
 			if (trainingCounter > roundThreshold) {
-				timeToStopTraining();
+				trainingStagnant();
 			}
 		}
 	}
 
 	private void minimizeUpdateTrain(NeatChromosome currentBest) {
 		if (bestTrainingFitness.getFitness() > (currentBest.getFitness() + delta)) {
-			bestTrainingFitness = currentBest;
+			bestTrainingFitness = new NeatChromosome(currentBest);
 			resetTraining();
 		} else {
 			trainingCounter++;
 			if (trainingCounter > roundThreshold) {
-				timeToStopTraining();
+				trainingStagnant();
 			}
 		}
 	}
 
 	private void maximizeUpdateTest(NeatChromosome currentBest) {
 		if (bestTestFitness.getTestFitness() < (currentBest.getTestFitness() - delta)) {
-			bestTestFitness = currentBest;
+			bestTestFitness = new NeatChromosome(currentBest);
 			resetTest();
 		} else {
 			testCounter++;
 			if (testCounter > roundThreshold) {
-				timeToStopTesting();
+				testingStagnant();
 			}
 		}
 	}
 
 	private void minimizeUpdateTest(NeatChromosome currentBest) {
 		if (bestTestFitness.getTestFitness() > (currentBest.getTestFitness() + delta)) {
-			bestTestFitness = currentBest;
+			bestTestFitness = new NeatChromosome(currentBest);
 			resetTest();
 		} else {
 			testCounter++;
 			if (testCounter > roundThreshold) {
-				timeToStopTesting();
+				testingStagnant();
 			}
 		}
 	}
 
-	private void timeToStopTesting() {
+	private void testingStagnant() {
 		if (roundThreshold >= 0) {
 			testingStagnant = true;
 		}
 	}
 
-	private void timeToStopTraining() {
+	private void trainingStagnant() {
 		if (roundThreshold >= 0) {
 			trainingStagnant = true;
 		}
@@ -115,11 +115,11 @@ public class FitnessMonitor extends BaseNeat {
 		testCounter = 0;
 	}
 
-	public boolean trainingStop() {
+	public boolean isTrainingStag() {
 		return trainingStagnant;
 	}
 
-	public boolean testingStop() {
+	public boolean isTestingStag() {
 		return testingStagnant;
 	}
 

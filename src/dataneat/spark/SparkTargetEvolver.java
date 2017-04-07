@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package dataneat.evolution;
+package dataneat.spark;
 
-import org.nd4j.linalg.dataset.api.DataSet;
+import org.apache.spark.api.java.JavaRDD;
+import org.nd4j.linalg.dataset.DataSet;
 
-public interface TargetEvolver {
+import dataneat.evolution.Population;
 
-	public void preEvolution(Population pop, DataSet data);
+public interface SparkTargetEvolver {
+
+	public void preEvolution(Population pop, JavaRDD<DataSet> data);
 	
 	//executes operators on a population
 	public void evolve(Population pop);

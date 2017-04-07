@@ -15,16 +15,19 @@
  *******************************************************************************/
 package dataneat.fitness;
 
+import org.nd4j.linalg.activations.IActivation;
+import org.nd4j.linalg.activations.impl.ActivationSoftmax;
 import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.api.ops.impl.transforms.SoftMax;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.linalg.lossfunctions.LossFunctions;
+import org.nd4j.linalg.lossfunctions.ILossFunction;
+import org.nd4j.linalg.lossfunctions.impl.LossMCXENT;
 
 public class MultiLogLoss implements TargetFitnessFunction {
 
 	@Override
-	public double computeFitness(INDArray labels, INDArray outputs, int batchSize) {				
-		INDArray z = Nd4j.getExecutioner().execAndReturn(new SoftMax(outputs));		
-		return LossFunctions.score(labels, LossFunctions.LossFunction.MCXENT, z, 0.0, 0.0, false)/batchSize;		
+	public double computeFitness(INDArray labels, INDArray outputs) {				
+		//INDArray z = Nd4j.getExecutioner().execAndReturn(new SoftMax(outputs));		
+		ILossFunction func = new LossMCXENT();
+		IActivation act = new ActivationSoftmax();
+		return func.computeScore(labels, outputs,act , null, true);		
 	}
 }

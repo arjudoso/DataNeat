@@ -18,15 +18,15 @@ package dataneat.utils;
 import java.util.Random;
 
 public class RandGen {
-	private static int seed = 0;
+	private static long seed = 0;
 
 	public static final Random rand = new Random(seed);
-	
-	public static int getSeed() {
+		
+	public static long getSeed() {		
 		return seed;
 	}
 	
-	public static void setSeed(int s) {
+	public static void setSeed(long s) {
 		seed = s;
 	}
 }

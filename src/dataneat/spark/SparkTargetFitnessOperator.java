@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package dataneat.evolution;
+package dataneat.spark;
 
-import org.nd4j.linalg.dataset.api.DataSet;
+import java.util.List;
 
-public interface TargetEvolver {
+import org.apache.spark.api.java.JavaRDD;
+import org.nd4j.linalg.dataset.DataSet;
 
-	public void preEvolution(Population pop, DataSet data);
-	
-	//executes operators on a population
-	public void evolve(Population pop);
-	public void prune(Population pop);
+import dataneat.genome.NeatChromosome;
+
+public interface SparkTargetFitnessOperator {
+
+	public void operate(List<NeatChromosome> population, JavaRDD<DataSet> data);
 }

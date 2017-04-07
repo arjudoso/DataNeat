@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package dataneat.evolution;
+package dataneat.spark;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.api.DataSet;
+import org.apache.spark.api.java.JavaRDD;
+import org.nd4j.linalg.dataset.DataSet;
 
 import dataneat.base.BaseNeat;
+import dataneat.evolution.Population;
 import dataneat.genome.NeatChromosome;
 import dataneat.operators.AddLinkOperator;
 import dataneat.operators.AddNodeOperator;
@@ -30,16 +31,13 @@ import dataneat.operators.CloneOperator;
 import dataneat.operators.LinkWeightOperator;
 import dataneat.operators.MutationOperator;
 import dataneat.operators.NeatCrossoverOperator;
-import dataneat.operators.SpeciationOperator;
-import dataneat.operators.TargetFitnessOperator;
-import dataneat.operators.CurrTimeFitnessOperator;
-import dataneat.operators.PrevTimeFitnessOperator;
 import dataneat.operators.RemoveLinkOperator;
 import dataneat.operators.RemoveNodeOperator;
+import dataneat.operators.SpeciationOperator;
 import dataneat.speciation.Species;
 import dataneat.utils.PropertiesHolder;
 
-public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
+public class SparkSupervisedEvolver extends BaseNeat implements SparkTargetEvolver {
 
 	private static final String CALC_MODE = "calcMode";
 	// supervised learning, uses a target fitness operator/function
@@ -47,17 +45,15 @@ public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
 	private List<MutationOperator> evolvingOperators = new ArrayList<MutationOperator>();
 	private List<MutationOperator> pruningOperators = new ArrayList<MutationOperator>();
 	private SpeciationOperator speciator;
-	private TargetFitnessOperator fitnessOperator;
+	private SparkTargetFitnessOperator fitnessOperator;
 	private NeatCrossoverOperator crossOver;
 	private CloneOperator cloner;
-	private AsexualOperator asexual;
-	private INDArray stabilMatrix;
+	private AsexualOperator asexual;	
 	private Integer calculationMode = 0;
 
-	public SupervisedEvolver(PropertiesHolder p, INDArray stabilMatrix) {
+	public SparkSupervisedEvolver(PropertiesHolder p) {
 		super(p);
-		calculationMode = Integer.parseInt(getParams().getProperty(CALC_MODE));
-		this.stabilMatrix = stabilMatrix;
+		calculationMode = Integer.parseInt(getParams().getProperty(CALC_MODE));		
 		initMutationOperators();
 	}
 
@@ -72,13 +68,13 @@ public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
 
 		switch (calculationMode) {
 		case 0:
-			fitnessOperator = new CurrTimeFitnessOperator(getHolder(), stabilMatrix);
+			fitnessOperator = new SparkCurrTimeFitnessOperator(getHolder());
 			break;
 		case 1:
-			fitnessOperator = new PrevTimeFitnessOperator(getHolder(), stabilMatrix);
-			break;
+			
+			
 		default:
-			fitnessOperator = new CurrTimeFitnessOperator(getHolder(), stabilMatrix);
+			fitnessOperator = new SparkCurrTimeFitnessOperator(getHolder());
 			break;
 		}
 
@@ -89,7 +85,7 @@ public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
 
 	@Override
 	// shape of data = (batchSize, numInputs)
-	public void preEvolution(Population pop, DataSet data) {
+	public void preEvolution(Population pop, JavaRDD<DataSet> data) {
 		// speciate, clears old species list and creates new ones based on
 		// current population
 		speciator.operate(pop, pop.getSpeciesDB());
@@ -208,9 +204,4 @@ public class SupervisedEvolver extends BaseNeat implements TargetEvolver {
 		// add elites to next gen
 		pop.addElites();
 	}
-
-	public void setStabilMatrix(INDArray stabilMatrix) {
-		this.stabilMatrix = stabilMatrix;
-	}
-
 }

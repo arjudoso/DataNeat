@@ -15,9 +15,6 @@
  *******************************************************************************/
 package dataneat.genome;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.implementations.SingleGraph;
 
@@ -39,13 +36,13 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 	// neurons & links in this chromosome
 
 	private NeuronDB neurons;
-	private List<LinkGene> links = new ArrayList<LinkGene>();
+	private LinkDB links;
 
 	public NeatChromosome(PropertiesHolder p) {
 		super(p);
 		init();
-
 		neurons = new NeuronDB();
+		links = new LinkDB();
 	}
 
 	public NeatChromosome(int inputs, int outputs, boolean connected, PropertiesHolder p) {
@@ -54,24 +51,31 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 		// create a new chromosome with the given number of IO,
 		// with random link weights
 		neurons = new NeuronDB();
+		links = new LinkDB();
 
 		// inputs & outputs get negative ids to differentiate them
 		int neuronId = -1;
 
 		for (int i = 0; i < inputs; i++) {
 			NeuronGene in = new NeuronGene(neuronId, NeuronType.INPUT);
+			double splitX = ((double) i / (double) (inputs - 1.0));
+			in.setSplitX(splitX);
 			addNeuron(in, NeuronType.INPUT);
 			neuronId--;
 		}
 
 		for (int i = 0; i < outputs; i++) {
 			NeuronGene out = new NeuronGene(neuronId, NeuronType.OUTPUT);
+			double splitX = ((double) i / (double) outputs);
+			out.setSplitX(splitX);
 			addNeuron(out, NeuronType.OUTPUT);
 			neuronId--;
 		}
 
 		// create a bias neuron
 		NeuronGene bias = new NeuronGene(neuronId, NeuronType.BIAS);
+		double splitX = 1.2;
+		bias.setSplitX(splitX);
 		addNeuron(bias, NeuronType.BIAS);
 		neuronId--;
 
@@ -99,12 +103,8 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 		this.species = parent.getSpecies();
 		this.fitness = parent.getFitness();
 		this.adjustedFitness = parent.getAdjustedFitness();
-
-		// make copies of the parent's links
-		for (LinkGene parentLink : parent.getLinks()) {
-			LinkGene newLink = new LinkGene(parentLink);
-			this.links.add(newLink);
-		}
+		this.testFitness = parent.testFitness;
+		this.links = new LinkDB(parent.getLinkDB());
 
 		this.neurons = new NeuronDB(parent.getNeurons());
 	}
@@ -123,9 +123,7 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 	 */
 
 	public boolean checkEligible(double mutationRate) {
-
 		return (RandGen.rand.nextDouble() < mutationRate);
-
 	}
 
 	private void assignID() {
@@ -179,7 +177,7 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 
 			if (connectionType == ConnectivityType.FORWARD) {
 
-				if (node1 == node2) {
+				if (node1.equals(node2)) {
 					continue;
 				}
 
@@ -211,12 +209,85 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 		return false;
 	}
 
+	public void removeLinkRandom() {
+		if (links.size() == 0) {
+			return;
+		}
+
+		int linkIndex = RandGen.rand.nextInt(links.size());
+		LinkGene link = links.getByIndex(linkIndex);
+		Integer fromId = new Integer(link.getFromNeuronID());
+		Integer toId = new Integer(link.getToNeuronID());
+		links.removeLinkByIndex(linkIndex);
+		NeuronGene toNeuron = neurons.getById(toId);
+		NeuronGene fromNeuron = neurons.getById(fromId);
+		toNeuron.removeInput(fromId);
+		fromNeuron.removeOutput(toId);
+
+		if ((toNeuron.getInputs().size() < 1) && (toNeuron.getNeuronType() == NeuronType.HIDDEN)) {
+			removeNode(toNeuron);
+		}
+	}
+
+	public void removeNodeRandom(int maxAttempts) {
+		int size = neurons.getHiddenIds().size();
+		if (size == 0) {
+			return;
+		}
+		int attempts = 0;
+		NeuronGene n = null;
+		int id = 0;
+		int index = 0;
+		do {
+			index = RandGen.rand.nextInt(size);
+			id = neurons.getHiddenIds().get(index);
+			n = neurons.getById(id);
+			attempts++;
+		} while (!n.canDelete() && (attempts < maxAttempts));
+
+		if (n != null) {
+			removeNode(n);
+		}
+	}
+
+	public void removeNode(NeuronGene n) {
+		// delete input links
+		for (Integer inId : n.getInputs()) {
+			NeuronGene inNeuron = neurons.getById(inId);
+			inNeuron.removeOutput(n.getID());
+			links.removeByTerminations(inNeuron.getID(), n.getID());
+		}
+
+		// delete output links
+		for (Integer outId : n.getOutputs()) {
+			NeuronGene outNeuron = neurons.getById(outId);
+			outNeuron.removeInput(n.getID());
+			links.removeByTerminations(n.getID(), outNeuron.getID());
+		}
+
+		for (Integer in : n.getInputs()) {			
+			for (Integer out : n.getOutputs()) {		
+				
+				if (!in.equals(out)) {
+					connectNodes(neurons.getById(in), neurons.getById(out));
+				}
+			}
+		}
+		// delete neuron from database
+		neurons.removeNeuron(n.getID());
+	}
+
 	private void connectNodes(int fromID, int toID, double weight, boolean randomize) {
 		// create a new connection, set the two nodes, pass the connection
 		// to the innovation database and have it return an Innovation ID,
 		// add the connection to the chromosome
 
-		neurons.getById(toID).addInput(fromID);
+		if (links.getByTerminations(fromID, toID) != null) {
+			return;
+		}
+
+		neurons.getById(toID).addInput(new Integer(fromID));
+		neurons.getById(fromID).addOutput(new Integer(toID));
 
 		LinkGene connection = new LinkGene();
 		connection.setFromNeuronID(fromID);
@@ -269,16 +340,20 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 			neuron.setSplitY(1.0); // outputs at the end
 			break;
 		case HIDDEN:
-			double start = 0.0, end = 0.0;
-			for (LinkGene l : links) {
-				if (l.getInnovationID() == splitLinkId) {
-					start = neurons.getById(l.getFromNeuronID()).getSplitY();
-					end = neurons.getById(l.getToNeuronID()).getSplitY();
-				}
-			}
-
+			// splitY
+			double startY = 0.0, endY = 0.0, startX = 0.0, endX = 0.0;
+			LinkGene l = links.getById(splitLinkId);
+			NeuronGene start = neurons.getById(l.getFromNeuronID());
+			NeuronGene end = neurons.getById(l.getToNeuronID());
+			startY = start.getSplitY();
+			startX = start.getSplitX();
+			endY = end.getSplitY();
+			endX = end.getSplitX();
 			// hidden neurons are half way inbetween the input and outputs
-			neuron.setSplitY(((end - start) / 2) + start);
+			neuron.setSplitY(((endY - startY) / 2.0) + startY);
+			// splitX
+			neuron.setSplitX(((endX - startX) / 2.0) + startX);
+			break;
 		}
 	}
 
@@ -292,38 +367,41 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 	}
 
 	public void mutateAddNode() {
-		// System.out.println("addNode");
 		// if called, assume this chromosome has been selected for node addition
+		if (links.size() < 1) {
+			return;
+		}
 
-		int splitLink = 0;
+		int splitLink = 0, count = 0;
 
 		// grab a random link
 		do {
 			splitLink = RandGen.rand.nextInt(links.size());
-		} while (links.get(splitLink).isBias() || links.get(splitLink).isAlreadySplit());
+			count++;
+		} while ((links.getByIndex(splitLink).isBias() || links.getByIndex(splitLink).isAlreadySplit()) && count < 10);
 
 		// create new node
-		NeuronGene newNode = new NeuronGene(links.get(splitLink).getInnovationID(), NeuronType.HIDDEN);
+		NeuronGene newNode = new NeuronGene(links.getByIndex(splitLink).getInnovationID(), NeuronType.HIDDEN);
 		addNeuron(newNode, NeuronType.HIDDEN);
 
 		// disable old link
-		links.get(splitLink).setEnabled(false);
-		links.get(splitLink).setAlreadySplit(true);
+		links.getByIndex(splitLink).setEnabled(false);
+		links.getByIndex(splitLink).setAlreadySplit(true);
 
 		// create the 2 new links
-		int startNodeId = links.get(splitLink).getFromNeuronID();
-		int endNodeId = links.get(splitLink).getToNeuronID();
+		int startNodeId = links.getByIndex(splitLink).getFromNeuronID();
+		int endNodeId = links.getByIndex(splitLink).getToNeuronID();
 
 		connectNodes(neurons.getById(startNodeId), newNode, 1.00);
-		connectNodes(newNode, neurons.getById(endNodeId), links.get(splitLink).getWeight());
-
+		connectNodes(newNode, neurons.getById(endNodeId), links.getByIndex(splitLink).getWeight());
 	}
 
 	public void mutateLinkWeight(double power) {
 		// if called, assume this chromosome has been selected for weight
 		// mutation, mutate all the chromosomes links using the specified power
 
-		for (LinkGene gene : links) {
+		for (int i = 0; i < links.size(); i++) {
+			LinkGene gene = links.getByIndex(i);
 			gene.perturbWeight(power);
 		}
 	}
@@ -334,14 +412,17 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 
 		Graph graph = new SingleGraph(Integer.toString(id));
 		graph.addAttribute("ui.stylesheet", styleSheet);
-		for (NeuronGene n : neurons.getNeuronList()) {
+		for (int i = 0; i < neurons.sizeWithBias(); i++) {
+			NeuronGene n = neurons.getByIndex(i);
 			graph.addNode(Integer.toString(n.getID())).addAttribute("ui.class", n.getNeuronType().name());
+			graph.getNode(Integer.toString(n.getID())).setAttribute("xyz", n.getSplitY(), n.getSplitX(), 0.0);
 		}
 
-		for (LinkGene l : links) {
+		for (int i = 0; i < links.size(); i++) {
+			LinkGene l = links.getByIndex(i);
 			if (l.isEnabled()) {
 				graph.addEdge(l.getInnovationID().toString(), Integer.toString(l.getFromNeuronID()),
-						Integer.toString(l.getToNeuronID()), true);				
+						Integer.toString(l.getToNeuronID()), true);
 			}
 		}
 
@@ -356,12 +437,8 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 		this.species = species;
 	}
 
-	public List<LinkGene> getLinks() {
+	public LinkDB getLinkDB() {
 		return links;
-	}
-
-	public void setLinks(List<LinkGene> links) {
-		this.links = links;
 	}
 
 	public double getFitness() {
@@ -407,7 +484,8 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 	public String getLinkWeights() {
 		StringBuilder sb = new StringBuilder();
 
-		for (LinkGene l : links) {
+		for (int i = 0; i < links.size(); i++) {
+			LinkGene l = links.getByIndex(i);
 			sb.append(l.getWeight());
 			sb.append(" ");
 		}
@@ -417,7 +495,8 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 
 	public int getDisabledCount() {
 		int count = 0;
-		for (LinkGene l : links) {
+		for (int i = 0; i < links.size(); i++) {
+			LinkGene l = links.getByIndex(i);
 			if (!l.isEnabled()) {
 				count++;
 			}
@@ -435,9 +514,14 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 
 	@Override
 	public int compareTo(NeatChromosome o) {
-		//Note: not consistent with equals
-		//will cause lists of chroms to sort smallest adjusted fitness to largest
-		//this means best fitness is at the end of the list
+		// Note: not consistent with equals
+		// will cause lists of chroms to sort smallest adjusted fitness to
+		// largest
+		// this means best fitness is at the end of the list
 		return Double.compare(this.adjustedFitness, o.adjustedFitness);
+	}
+
+	public LinkDB getLinks() {
+		return links;
 	}
 }

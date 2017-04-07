@@ -56,7 +56,8 @@ public class Network extends BaseNeat {
 		size = neurons.size();
 
 		// then link the nodes
-		for (LinkGene l : chrom.getLinks()) {
+		for (int i = 0; i < chrom.getLinks().size(); i++) {
+			LinkGene l = chrom.getLinks().getByIndex(i);
 			// skip disabled links
 			if (l.isEnabled()) {
 				// get the neuron that this link is going to and stash the id of
@@ -140,7 +141,7 @@ public class Network extends BaseNeat {
 		List<INDArray> outputs = new ArrayList<INDArray>();		
 
 		for (GeneralNeuron n : outputNeurons) {
-			outputs.add(n.getOutput());
+			outputs.add(n.getOutput());			
 		}
 
 		outs = Nd4j.hstack(outputs);
@@ -190,14 +191,13 @@ public class Network extends BaseNeat {
 		}
 	}
 
-	// TODO eval func for current timestep
+	
 	private INDArray evalGenNeuronPrev(GeneralNeuron n) {
 		int i = 0;
 		INDArray accum = null;
 		List<INDArray> temp = new ArrayList<INDArray>();
 
-		if (n.getLinkWeights().size() == 0) {
-			n.setInput(Nd4j.zeros(batchSize, 1));
+		if (n.getLinkWeights().size() == 0) {			
 			return n.computeRecurr();
 		}
 
@@ -218,15 +218,13 @@ public class Network extends BaseNeat {
 		n.setInput(accum.mmul(ndWeights));
 		return n.computeRecurr();
 	}
-
-	// TODO eval func for current timestep
+	
 	private INDArray evalGenNeuronCurr(GeneralNeuron n) {
 		int i = 0;
 		INDArray accum = null;
 		List<INDArray> temp = new ArrayList<INDArray>();
 
-		if (n.getLinkWeights().size() == 0) {
-			//n.setInput(Nd4j.zeros(batchSize, 1));
+		if (n.getLinkWeights().size() == 0) {			
 			return n.compute();
 		}
 

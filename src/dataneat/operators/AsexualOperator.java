@@ -13,15 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package dataneat.evolution;
+package dataneat.operators;
 
-import org.nd4j.linalg.dataset.api.DataSet;
+import java.util.ArrayList;
+import java.util.List;
 
-public interface TargetEvolver {
+import dataneat.genome.NeatChromosome;
+import dataneat.utils.RandGen;
 
-	public void preEvolution(Population pop, DataSet data);
-	
-	//executes operators on a population
-	public void evolve(Population pop);
-	public void prune(Population pop);
+public class AsexualOperator {
+
+	public List<NeatChromosome> operate(List<NeatChromosome> chroms, int numOffspring) {
+		
+		List<NeatChromosome> offspring = new ArrayList<NeatChromosome>();
+		
+		for (int i = 0; i<numOffspring; i++) {
+			int index = RandGen.rand.nextInt(chroms.size());
+			NeatChromosome clone = new NeatChromosome(chroms.get(index));
+			offspring.add(clone);
+		}
+		
+		return offspring;
+	}
 }

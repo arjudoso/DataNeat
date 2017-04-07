@@ -21,7 +21,7 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 public class RMSE implements TargetFitnessFunction {
 
 	@Override
-	public double computeFitness(INDArray labels, INDArray outputs, int batchSize) {
+	public double computeFitness(INDArray labels, INDArray outputs) {
 		return  Math.sqrt(LossFunctions.score(labels, LossFunctions.LossFunction.MSE, outputs, 0.0, 0.0, false));			
 	}	
 }

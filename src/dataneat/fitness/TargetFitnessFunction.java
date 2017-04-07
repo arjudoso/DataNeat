@@ -20,5 +20,5 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 public interface TargetFitnessFunction {
 
 	//fitness functions take the network output as a param and return a fitness value
-	public double computeFitness(INDArray labels, INDArray outputs, int batchSize);
+	public double computeFitness(INDArray labels, INDArray outputs);
 }

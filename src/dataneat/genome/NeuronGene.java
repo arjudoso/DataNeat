@@ -19,24 +19,26 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class NeuronGene {
-
+	
 	NeuronType neuronType;
 
 	private double splitX = 0.0, splitY = 0.0;
 
 	private boolean loopBack = false;
 
-	private List<Integer> inputs = new ArrayList<Integer>();
+	private List<Integer> inputNeurons = new ArrayList<Integer>();
+	private List<Integer> outputNeurons = new ArrayList<Integer>();	
 
 	// neurons given ID based on the innovation of the link they split
 	private int splitLinkID = 0, numOutputs = 0;
 
-	public NeuronGene(int id, NeuronType type) {
+	public NeuronGene(int id, NeuronType type) {		
 		neuronType = type;
 		splitLinkID = id;
 	}
 
 	public NeuronGene(NeuronGene parentNeuron) {
+		
 		this.neuronType = parentNeuron.getNeuronType();
 		this.splitX = parentNeuron.getSplitX();
 		this.splitY = parentNeuron.getSplitY();
@@ -44,9 +46,13 @@ public class NeuronGene {
 		this.splitLinkID = parentNeuron.splitLinkID;
 		this.numOutputs = parentNeuron.numOutputs;
 
-		for (Integer input : parentNeuron.inputs) {
-			this.inputs.add(input);
+		for (Integer input : parentNeuron.inputNeurons) {
+			addInput(new Integer(input));
 		}
+		
+		for (Integer output : parentNeuron.outputNeurons) {
+			addOutput(new Integer(output));
+		}		
 	}
 
 	public NeuronType getNeuronType() {
@@ -102,7 +108,7 @@ public class NeuronGene {
 		} else {
 			// otherwise return invalid if this neuron already has an incomming
 			// connection from the parameter neuron
-			return inputs.contains(nodeId);
+			return inputNeurons.contains(nodeId);
 		}
 	}
 
@@ -122,21 +128,21 @@ public class NeuronGene {
 		if (incommingType == NeuronType.BIAS) {
 			// if the neuron trying to connect to this neuron is a bias node,
 			// then just check if this node has a bias connection yet
-			return inputs.contains(incommingNodeId);
+			return inputNeurons.contains(incommingNodeId);
 		}
 
 		
 		if (this.neuronType == NeuronType.OUTPUT) {
 			// the ending node of this connection is an output neuron, valid
 			// as long as connection doesn't already exist
-			return (inputs.contains(incommingNodeId));
+			return (inputNeurons.contains(incommingNodeId));
 		} else {
 
 			// we have a hidden neuron
 			// return invalid if this neuron already has an incomming
 			// connection from the parameter neuron or if the connection
 			// would be recurrent
-			return (inputs.contains(incommingNodeId) || checkSplitsInvalid(splitY));
+			return (inputNeurons.contains(incommingNodeId) || checkSplitsInvalid(splitY));
 		}
 	}
 
@@ -159,11 +165,14 @@ public class NeuronGene {
 	}
 
 	public void addInput(int connectionFromId) {
-		inputs.add(connectionFromId);
+		if (connectionFromId == this.splitLinkID) {
+			System.out.println("Here");
+		}
+		inputNeurons.add(connectionFromId);		
 	}
 
-	public List<Integer> getInputs() {
-		return inputs;
+	List<Integer> getInputs() {
+		return inputNeurons;
 	}
 
 	public boolean isLoopBack() {
@@ -172,13 +181,61 @@ public class NeuronGene {
 
 	public void setloopBack(boolean loopBack) {
 		this.loopBack = loopBack;
+	}	
+
+	List<Integer> getOutputs() {
+		return outputNeurons;
 	}
 
-	public void incrementOutputs() {
-		numOutputs++;
+	public void addOutput(Integer toId) {
+		if (toId == this.splitLinkID) {
+			System.out.println("Here");
+		}
+		outputNeurons.add(toId);
+	}	
+
+	public boolean canDelete() {		
+		if (neuronType != NeuronType.HIDDEN){
+			return false;
+		}
+		
+		if ((inputNeurons.size() < 2) || (outputNeurons.size() < 2)) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
-	public void decrementOutputs() {
-		numOutputs--;
+	public void removeInput(Integer inputId) {
+		inputNeurons.remove(inputId);		
+	}
+
+	public void removeOutput(Integer outId) {
+		outputNeurons.remove(outId);		
+	}	
+	
+	@Override
+	public boolean equals(Object o) {
+		if (!(o instanceof NeuronGene)) {
+			return false;
+		}
+		
+		if (this == o){
+			return true;
+		}
+		
+		NeuronGene n = (NeuronGene)o;
+		if (Integer.compare(n.splitLinkID,this.splitLinkID) == 0) {
+			return true;
+		}else {
+			return false;
+		}		
+	}
+	
+	@Override
+	public int hashCode() {
+		int result = 17;
+		result = 31 * result + splitLinkID;
+		return result;
 	}
 }

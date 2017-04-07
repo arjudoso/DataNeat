@@ -13,37 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package dataneat.operators;
+package dataneat.spark;
 
 import java.util.List;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.dataset.api.DataSet;
-import org.nd4j.linalg.factory.Nd4j;
+
+import org.apache.spark.api.java.JavaRDD;
+import org.nd4j.linalg.dataset.DataSet;
 
 import dataneat.base.BaseNeat;
 import dataneat.fitness.TargetFitnessFunction;
 import dataneat.genome.NeatChromosome;
-import dataneat.phenotype.Network;
+import dataneat.spark.function1.SparkNetworkEvalCurr;
 import dataneat.utils.PropertiesHolder;
 
-public class TestFitnessOperator extends BaseNeat implements TargetFitnessOperator {
+public class SparkTestFitnessOperator extends BaseNeat implements SparkTargetFitnessOperator {
 	// almost identical to the fitness operator, but this class instead deals
 	// with the test dataset
 
 	private static final String FITNESS_FUNCTION = "fitnessFunction";
-	private static final String STABIL_THRESH = "stabilizationDelta";
-	private static final String BATCH_SIZE = "batchSize";
-	
 	private TargetFitnessFunction fitnessFunction;
-	private INDArray stabil;
-	private double stabilDelta = 0.01;	
-	private Integer batchSize = 50;
+	long count = 0l;
 
-	public TestFitnessOperator(PropertiesHolder p) {
+	public SparkTestFitnessOperator(PropertiesHolder p) {
 		super(p);
-		stabilDelta = Double.parseDouble(getParams().getProperty(STABIL_THRESH));		
-		batchSize = Integer.parseInt(getParams().getProperty(BATCH_SIZE));		
-
+		
 		try {
 			fitnessFunction = (TargetFitnessFunction) Class.forName(getParams().getProperty(FITNESS_FUNCTION))
 					.newInstance();
@@ -54,33 +47,25 @@ public class TestFitnessOperator extends BaseNeat implements TargetFitnessOperat
 
 	}
 
-	public void operate(List<NeatChromosome> population, DataSet data) {
+	public void operate(List<NeatChromosome> population, JavaRDD<DataSet> data) {
 
 		if (population == null) {
 			// Population list empty:
 			// nothing to do.
 			// -----------------------------------------------
 			return;
-		}
+		}		
+		count = data.count();
 		
-		stabil= Nd4j.zeros(data.numExamples(), 1);
-		stabil.addi(stabilDelta);
-		batchSize = data.numExamples();
-		getParams().setProperty(BATCH_SIZE, this.batchSize.toString());
-
 		population.parallelStream().forEach(chrom -> evaluate(chrom, data));
 	}
 
-	private void evaluate(NeatChromosome chrom, DataSet data) {
-		// this function evaluates a single chromosome
-
-		// create phenotype
-		Network net = new Network(chrom, getHolder(), stabil);
-
-		// compute on entire training set
-		net.computeNetPrevTimestep(data.getFeatures());
-		// set fitness
-		double testFitness = fitnessFunction.computeFitness(data.getLabels(), net.getOutput());
-		chrom.setTestFitness(testFitness);
+	private void evaluate(NeatChromosome chrom, JavaRDD<DataSet> data) {
+		SparkNetworkEvalCurr eval = new SparkNetworkEvalCurr(getHolder());
+		eval.setChrom(chrom);		
+		eval.setFitnessFunction(fitnessFunction);
+		JavaRDD<Double> scoresDistributed = data.map(eval);
+		double fitness = scoresDistributed.reduce((a,b) -> a+b) / count ;		
+		chrom.setTestFitness(fitness);
 	}
 }
