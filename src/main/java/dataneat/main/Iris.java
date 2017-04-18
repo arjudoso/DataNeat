@@ -89,7 +89,7 @@ public class Iris {
 		
 		DataSet allData = iterator.next();		
         allData.shuffle();
-        SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.65);  //Use 65% of data for training
+        SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.7);  //Use 65% of data for training
 
         DataSet trainingData = testAndTrain.getTrain();
         DataSet testData = testAndTrain.getTest();
@@ -211,7 +211,7 @@ public class Iris {
 		int numOuts = 3;
 		int batchSize = 150;
 		int numInputs = 4;
-		int epochs = 200;
+		int epochs = 300;
 		int tunerRounds = 25;
 
 		DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numOuts);

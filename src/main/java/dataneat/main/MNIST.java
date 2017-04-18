@@ -61,7 +61,7 @@ public class MNIST {
 		int numOuts = 10;
 		int batchSize = 1000;
 		int numInputs = 784;
-		int epochs = 100;
+		int epochs = 1000;
 
 		DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize,labelIndex,numOuts);
 
