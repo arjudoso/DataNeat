@@ -113,7 +113,7 @@ public class Iris {
 
 		engine.runMulti(iterator2, testData, epochs);
 
-		engine.displayBestTrainingNetwork();
+		//engine.displayBestTrainingNetwork();
 		engine.getRunData().toCSV();
 
 		System.out.println("Evaluate model....");
