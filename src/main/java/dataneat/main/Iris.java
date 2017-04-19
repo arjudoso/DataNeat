@@ -74,7 +74,7 @@ public class Iris {
 		int numLinesToSkip = 0;
 		String delimiter = ",";
 		RecordReader recordReader = new CSVRecordReader(numLinesToSkip, delimiter);
-		recordReader.initialize(new FileSplit(new File("iris.txt")));
+		recordReader.initialize(new FileSplit(new File("/home/ricardo_fr_rivero/dn/iris.txt")));
 
 		// Second: the RecordReaderDataSetIterator handles conversion to DataSet
 		// objects, ready for use in neural network
