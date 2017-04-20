@@ -57,8 +57,9 @@ public class Iris {
 	private static Logger log = LoggerFactory.getLogger(Iris.class);
 
 	public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
-		buildAndRun();
+		//buildAndRun();
 		//runTuner();
+		sparkBuildAndRun();
 	}
 
 	private static void buildAndRun() throws FileNotFoundException, IOException, InterruptedException {
