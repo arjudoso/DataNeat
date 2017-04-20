@@ -22,7 +22,7 @@ import java.util.Properties;
 
 public class PropertiesHolder {
 
-	private String defaultFile = "defaultProp.properties", appFile = "appProp.properties";
+	private String defaultFile = "/home/ricardo_fr_rivero/dn/defaultProp.properties", appFile = "/home/ricardo_fr_rivero/dn/appProp.properties";
 
 	private Properties defaultProps = new Properties(), appProps;
 
