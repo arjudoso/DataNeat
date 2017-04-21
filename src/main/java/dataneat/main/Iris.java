@@ -156,7 +156,7 @@ public class Iris {
 		
 		//read data in from file
 		System.out.println("reading data");
-		JavaRDD<String> stringData = sc.textFile("file:///home/ricardo_fr_rivero/dn/iris.txt");
+		JavaRDD<String> stringData = sc.textFile("file://home/ricardo_fr_rivero/dn/iris.txt");
 		
 		//We first need to parse this comma-delimited (CSV) format; we can do this using CSVRecordReader:
         RecordReader rr = new CSVRecordReader();
