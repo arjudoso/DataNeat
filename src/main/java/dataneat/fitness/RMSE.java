@@ -15,10 +15,14 @@
  *******************************************************************************/
 package dataneat.fitness;
 
+import java.io.Serializable;
+
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.lossfunctions.LossFunctions;
 
-public class RMSE implements TargetFitnessFunction {
+public class RMSE implements TargetFitnessFunction, Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	@Override
 	public double computeFitness(INDArray labels, INDArray outputs) {

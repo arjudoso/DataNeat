@@ -15,13 +15,17 @@
  *******************************************************************************/
 package dataneat.fitness;
 
+import java.io.Serializable;
+
 import org.nd4j.linalg.activations.IActivation;
 import org.nd4j.linalg.activations.impl.ActivationSoftmax;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.lossfunctions.ILossFunction;
 import org.nd4j.linalg.lossfunctions.impl.LossMCXENT;
 
-public class MultiLogLoss implements TargetFitnessFunction {
+public class MultiLogLoss implements TargetFitnessFunction, Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	@Override
 	public double computeFitness(INDArray labels, INDArray outputs) {				
