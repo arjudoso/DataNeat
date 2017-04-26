@@ -16,6 +16,7 @@
 package dataneat.genome;
 
 import java.awt.Point;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,8 +24,9 @@ import java.util.Map;
 
 import dataneat.utils.RandGen;
 
-public class LinkDB {
+public class LinkDB implements Serializable {
 
+	private static final long serialVersionUID = 1L;
 	public List<LinkGene> linkGeneList = new ArrayList<LinkGene>();
 	public Map<Integer, LinkGene> linkGeneMap = new HashMap<Integer, LinkGene>();
 	public Map<Point,LinkGene> linksByTermination = new HashMap<Point,LinkGene>();

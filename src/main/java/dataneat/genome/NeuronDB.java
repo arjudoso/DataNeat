@@ -15,6 +15,7 @@
  *******************************************************************************/
 package dataneat.genome;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,8 +23,9 @@ import java.util.Map;
 
 import dataneat.utils.RandGen;
 
-public class NeuronDB {
-
+public class NeuronDB implements Serializable {
+	
+	private static final long serialVersionUID = 1L;
 	private List<NeuronGene> neuronList = new ArrayList<NeuronGene>();
 	private Map<Integer, NeuronGene> neuronMap = new HashMap<Integer, NeuronGene>();
 	private List<Integer> inputIds = new ArrayList<Integer>();

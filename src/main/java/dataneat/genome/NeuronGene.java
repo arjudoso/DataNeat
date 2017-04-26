@@ -15,11 +15,14 @@
  *******************************************************************************/
 package dataneat.genome;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class NeuronGene {
-	
+public class NeuronGene implements Serializable {
+
+	private static final long serialVersionUID = 1L;
+
 	NeuronType neuronType;
 
 	private double splitX = 0.0, splitY = 0.0;

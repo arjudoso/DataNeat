@@ -15,10 +15,14 @@
  *******************************************************************************/
 package dataneat.genome;
 
+import java.io.Serializable;
+
 import dataneat.utils.RandGen;
 
-public class LinkGene {
+public class LinkGene implements Serializable {
 	
+	private static final long serialVersionUID = 1L;
+
 	private int innovationID = 0;
 
 	private int fromNeuronID = 0, toNeuronID = 0;
