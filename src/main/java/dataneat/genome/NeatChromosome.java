@@ -15,6 +15,8 @@
  *******************************************************************************/
 package dataneat.genome;
 
+import java.io.Serializable;
+
 import org.graphstream.graph.Graph;
 import org.graphstream.graph.implementations.SingleGraph;
 
@@ -23,7 +25,9 @@ import dataneat.innovation.InnovationDatabase;
 import dataneat.utils.PropertiesHolder;
 import dataneat.utils.RandGen;
 
-public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosome> {
+public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosome>, Serializable {
+
+	private static final long serialVersionUID = 1L;
 	private static final String MAXIMIZE = "maximize";
 	private static int chromCounter = 0;
 
