@@ -85,6 +85,8 @@ public class Iris {
 		int numInputs = 4;
 		int epochs = 1500;
 
+		p.getAppProps().setProperty("batchSize", Integer.toString(batchSize));
+		
 		DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numOuts);		
 		
 		
