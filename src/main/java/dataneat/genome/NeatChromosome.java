@@ -41,6 +41,8 @@ public class NeatChromosome extends BaseNeat implements Comparable<NeatChromosom
 
 	private NeuronDB neurons;
 	private LinkDB links;
+	
+	public NeatChromosome(){}
 
 	public NeatChromosome(PropertiesHolder p) {
 		super(p);

@@ -26,6 +26,8 @@ import org.nd4j.linalg.lossfunctions.impl.LossMCXENT;
 public class MultiLogLoss implements TargetFitnessFunction, Serializable {
 
 	private static final long serialVersionUID = 1L;
+	
+	public MultiLogLoss(){}
 
 	@Override
 	public double computeFitness(INDArray labels, INDArray outputs) {				

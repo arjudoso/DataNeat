@@ -23,6 +23,8 @@ import org.nd4j.linalg.lossfunctions.LossFunctions;
 public class RMSE implements TargetFitnessFunction, Serializable {
 
 	private static final long serialVersionUID = 1L;
+	
+	public RMSE(){}
 
 	@Override
 	public double computeFitness(INDArray labels, INDArray outputs) {

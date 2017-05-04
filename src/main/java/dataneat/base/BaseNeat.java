@@ -15,18 +15,21 @@
  *******************************************************************************/
 package dataneat.base;
 
+import java.io.Serializable;
 import java.util.Properties;
 
 import dataneat.utils.PropertiesHolder;
 
-public abstract class BaseNeat {
+public abstract class BaseNeat implements Serializable {
 
 	// defines some basic functionality to retrieve Neat parameters from a properties object
 
+	private static final long serialVersionUID = 1L;
 	private PropertiesHolder holder;
+	
+	public BaseNeat(){}
 
 	public BaseNeat(PropertiesHolder p) {
-
 		setHolder(p);
 	}
 

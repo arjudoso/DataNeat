@@ -34,6 +34,8 @@ public class NeuronGene implements Serializable {
 
 	// neurons given ID based on the innovation of the link they split
 	private int splitLinkID = 0, numOutputs = 0;
+	
+	public NeuronGene(){}
 
 	public NeuronGene(int id, NeuronType type) {		
 		neuronType = type;
