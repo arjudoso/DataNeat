@@ -18,9 +18,12 @@ package dataneat.utils;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Properties;
 
-public class PropertiesHolder {
+public class PropertiesHolder implements Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	private String defaultFile = "/home/ricardo_fr_rivero/dn/defaultProp.properties", appFile = "/home/ricardo_fr_rivero/dn/appProp.properties";
 
