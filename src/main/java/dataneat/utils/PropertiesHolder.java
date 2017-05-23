@@ -30,6 +30,11 @@ public class PropertiesHolder implements Serializable {
 	private Properties defaultProps = new Properties(), appProps;
 
 	public PropertiesHolder() {}
+	
+	public PropertiesHolder(String df, String af) {
+		defaultFile = df;
+		appFile = af;
+	}
 
 	public void load() {
 

@@ -50,21 +50,21 @@ import dataneat.spark.SparkEngine;
 import dataneat.utils.PropertiesHolder;
 import dataneat.utils.RandGen;
 
-public class Iris {
+public class rus {
 
-	private static Logger log = LoggerFactory.getLogger(Iris.class);
+	private static Logger log = LoggerFactory.getLogger(rus.class);
 
 	public static void main(String[] args) throws FileNotFoundException, IOException, InterruptedException {
-		//buildAndRun();
+		buildAndRun();
 		//runTuner();
-		sparkBuildAndRun();
+		//sparkBuildAndRun();
 	}
 
 	private static void buildAndRun() throws FileNotFoundException, IOException, InterruptedException {
 		// configure parameters
 
 		System.out.println(("loading properties"));
-		PropertiesHolder p = new PropertiesHolder();
+		PropertiesHolder p = new PropertiesHolder("defaultProp.properties","appProp.properties");
 		p.load();
 
 		// First: get the dataset using the record reader. CSVRecordReader
@@ -73,54 +73,54 @@ public class Iris {
 		int numLinesToSkip = 0;
 		String delimiter = ",";
 		RecordReader recordReader = new CSVRecordReader(numLinesToSkip, delimiter);
-		recordReader.initialize(new FileSplit(new File("/home/ricardo_fr_rivero/dn/iris.txt")));
+		recordReader.initialize(new FileSplit(new File("C:\\Users\\riverori\\Documents\\aa\\train.csv")));
 
 		// Second: the RecordReaderDataSetIterator handles conversion to DataSet
 		// objects, ready for use in neural network
-		int labelIndex = 4;
-		int numOuts = 3;
+		int labelIndex = 307;
+		int numOuts = 1;
 		int batchSize = 150;
-		int numInputs = 4;
-		int epochs = 1500;		
+		int numInputs = 307;
+		int epochs = 500;		
 		
-		DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, labelIndex, numOuts);		
+		DataSetIterator iterator = new RecordReaderDataSetIterator(recordReader, batchSize, numInputs, numInputs, true);		
 		
 		
-		DataSet allData = iterator.next();		
-        allData.shuffle();
-        SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.7);  //Use 65% of data for training
+		//DataSet allData = iterator.next();		
+       // allData.shuffle();
+        //SplitTestAndTrain testAndTrain = allData.splitTestAndTrain(0.7);  //Use 65% of data for training
 
-        DataSet trainingData = testAndTrain.getTrain();
-        DataSet testData = testAndTrain.getTest();
+        //DataSet trainingData = testAndTrain.getTrain();
+        //DataSet testData = testAndTrain.getTest();
 
         //We need to normalize our data. We'll use NormalizeStandardize (which gives us mean 0, unit variance):
-        DataNormalization normalizer = new NormalizerStandardize();
-        normalizer.fit(trainingData);           //Collect the statistics (mean/stdev) from the training data. This does not modify the input data
-        normalizer.transform(trainingData);     //Apply normalization to the training data
-        normalizer.transform(testData);         //Apply normalization to the test data. This is using statistics calculated from the *training* set
+       // DataNormalization normalizer = new NormalizerStandardize();
+       // normalizer.fit(trainingData);           //Collect the statistics (mean/stdev) from the training data. This does not modify the input data
+       // normalizer.transform(trainingData);     //Apply normalization to the training data
+       // normalizer.transform(testData);         //Apply normalization to the test data. This is using statistics calculated from the *training* set
 		
-		DataSetIterator iterator2 = new TestDataSetIterator((org.nd4j.linalg.dataset.DataSet) trainingData, batchSize);
+		//DataSetIterator iterator2 = new TestDataSetIterator((org.nd4j.linalg.dataset.DataSet) trainingData, batchSize);
 		
-		/*
+		
 		DataNormalization normalizer = new NormalizerStandardize();
 		normalizer.fit(iterator);
 		iterator.setPreProcessor(normalizer);
-		*/
 		
-		Engine engine = new Engine(p);		
+		
+		Engine engine = new Engine(p);
 		engine.autoConfig(numInputs, numOuts, batchSize);
 
-		engine.runMulti(iterator2, testData, epochs);
+		engine.runMulti(iterator, epochs);
 
 		//engine.displayBestTrainingNetwork();
 		engine.getRunData().toCSV();
 
-		System.out.println("Evaluate model....");
-		Evaluation eval = new Evaluation(numOuts); 
+		//System.out.println("Evaluate model....");
+		//Evaluation eval = new Evaluation(numOuts); 
 		//DataSet data = iterator.next();
-		INDArray output = engine.generatePredictions(testData.getFeatures(), "test");
-		eval.eval(testData.getLabels(), output);
-		System.out.println(eval.stats());
+		//INDArray output = engine.generatePredictions(testData.getFeatures(), "test");
+		//eval.eval(testData.getLabels(), output);
+		//System.out.println(eval.stats());
 		System.out.println("****************Example finished********************");
 		
 	}
@@ -129,7 +129,7 @@ public class Iris {
 		// configure parameters
 		System.out.println(("loading properties"));
 		PropertiesHolder p = new PropertiesHolder();
-		p.load();		
+		p.load();
 		
 		//build spark context
 		SparkConf conf = new SparkConf().setAppName("DataNeat Iris");
@@ -154,7 +154,8 @@ public class Iris {
 		
 		//read data in from file
 		System.out.println("reading data");
-		JavaRDD<String> stringData = sc.textFile("In/iris.txt");		
+		JavaRDD<String> stringData = sc.textFile("In/iris.txt");
+		
 		
 		//We first need to parse this comma-delimited (CSV) format; we can do this using CSVRecordReader:
         RecordReader rr = new CSVRecordReader();
@@ -176,7 +177,6 @@ public class Iris {
 		JavaRDD<org.nd4j.linalg.dataset.DataSet> test = splitData[1];    		
 		
 		SparkEngine engine = new SparkEngine(p);
-		engine.setBatchSize(batchSize);
 		engine.autoConfig(numInputs, numOuts, batchSize);
 
 		engine.runMulti(train, test, epochs);

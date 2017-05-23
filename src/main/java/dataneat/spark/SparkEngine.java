@@ -36,6 +36,7 @@ import dataneat.utils.RandGen;
 
 public class SparkEngine extends BaseNeat {
 
+	private static final long serialVersionUID = 1L;
 	private static final String TEST_DELAY = "testDelay";
 	private static final String CONSOLE_DELAY = "consoleDelay";	
 	private static final String COMPLEXITY_THRESH = "complexityThresh";
@@ -315,5 +316,9 @@ public class SparkEngine extends BaseNeat {
 
 	public Population getPop() {
 		return pop;
+	}
+	
+	public void setBatchSize(int size) {
+		batchSize = size;
 	}
 }

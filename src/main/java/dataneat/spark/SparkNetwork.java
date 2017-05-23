@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package dataneat.phenotype;
+package dataneat.spark;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,13 +27,13 @@ import org.nd4j.linalg.factory.Nd4j;
 import dataneat.base.BaseNeat;
 import dataneat.genome.LinkGene;
 import dataneat.genome.NeatChromosome;
+import dataneat.phenotype.GeneralNeuron;
 import dataneat.utils.PropertiesHolder;
 
-public class Network extends BaseNeat {
+public class SparkNetwork extends BaseNeat {
 
-	private static final long serialVersionUID = 1L;
-	private static final String BATCHSIZE = "batchSize";
-	Integer batchSize = 50;
+	private static final long serialVersionUID = 1L;	
+	//Integer batchSize = 50;
 	private Map<Integer, GeneralNeuron> neurons = new HashMap<Integer, GeneralNeuron>();
 	private List<GeneralNeuron> inputNeurons = new ArrayList<GeneralNeuron>();
 	private List<GeneralNeuron> hiddenNeurons = new ArrayList<GeneralNeuron>();
@@ -41,10 +41,9 @@ public class Network extends BaseNeat {
 	private int biasId, size = 2;
 	INDArray stabilMatrix;
 
-	public Network(NeatChromosome chrom, PropertiesHolder p, INDArray stabilMatrix) {
+	public SparkNetwork(NeatChromosome chrom, PropertiesHolder p, INDArray stabilMatrix) {
 		super(p);
-		this.stabilMatrix = stabilMatrix;		
-		batchSize = Integer.parseInt(getParams().getProperty(BATCHSIZE));		
+		this.stabilMatrix = stabilMatrix;			
 
 		// first create the nodes
 
@@ -264,5 +263,9 @@ public class Network extends BaseNeat {
 			}
 		}
 		return true;
+	}
+	
+	public void setBatchSize(int size) {
+		batchSize = size;
 	}
 }

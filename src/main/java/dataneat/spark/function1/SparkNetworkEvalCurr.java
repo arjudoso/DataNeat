@@ -20,7 +20,7 @@ public class SparkNetworkEvalCurr extends BaseNeat implements Function<DataSet, 
 	private TargetFitnessFunction fitnessFunction;
 	
 	public SparkNetworkEvalCurr(PropertiesHolder p) {
-		super(p);		
+			super(p);
 		stabilDelta = Double.parseDouble(getParams().getProperty(STABIL_THRESH));
 	}
 

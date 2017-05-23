@@ -28,6 +28,8 @@ import dataneat.utils.PropertiesHolder;
 
 public class SparkCurrTimeFitnessOperator extends BaseNeat implements SparkTargetFitnessOperator {
 
+	
+	private static final long serialVersionUID = 1L;
 	private static final String FITNESS_FUNCTION = "fitnessFunction";
 	private static final String MAXIMIZE = "maximize";		
 	private boolean maximize = true;		
