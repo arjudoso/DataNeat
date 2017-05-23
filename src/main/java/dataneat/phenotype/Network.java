@@ -33,7 +33,7 @@ public class Network extends BaseNeat {
 
 	private static final long serialVersionUID = 1L;
 	private static final String BATCHSIZE = "batchSize";
-	Integer batchSize = 50;
+	//Integer batchSize = 50;
 	private Map<Integer, GeneralNeuron> neurons = new HashMap<Integer, GeneralNeuron>();
 	private List<GeneralNeuron> inputNeurons = new ArrayList<GeneralNeuron>();
 	private List<GeneralNeuron> hiddenNeurons = new ArrayList<GeneralNeuron>();
@@ -44,7 +44,7 @@ public class Network extends BaseNeat {
 	public Network(NeatChromosome chrom, PropertiesHolder p, INDArray stabilMatrix) {
 		super(p);
 		this.stabilMatrix = stabilMatrix;		
-		batchSize = Integer.parseInt(getParams().getProperty(BATCHSIZE));		
+		//batchSize = Integer.parseInt(getParams().getProperty(BATCHSIZE));		
 
 		// first create the nodes
 
