@@ -31,14 +31,17 @@ import dataneat.utils.PropertiesHolder;
 
 public class GeneralNeuron extends BaseNeuron {
 
+	private static final long serialVersionUID = 1L;
 	// Integer value = fromNeuron ID not link ID
 	private Map<Integer, Double> linkWeights = new HashMap<Integer, Double>();
 	private INDArray stabilMatrix;
 	private TransferFunction transferFunction;
 	private boolean stable = true;
 
-	public GeneralNeuron(NeuronGene gene, PropertiesHolder p, INDArray stabilMatrix) {
-		super(gene, p);
+	public GeneralNeuron(){}
+	
+	public GeneralNeuron(NeuronGene gene, PropertiesHolder p, INDArray stabilMatrix, int batchSize) {
+		super(gene, p, batchSize);
 		this.stabilMatrix = stabilMatrix;
 		
 		switch (gene.getNeuronType()) {

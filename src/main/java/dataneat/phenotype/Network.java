@@ -31,17 +31,18 @@ import dataneat.utils.PropertiesHolder;
 
 public class Network extends BaseNeat {
 
-	private static final long serialVersionUID = 1L;
-	private static final String BATCHSIZE = "batchSize";
-	//Integer batchSize = 50;
+	private static final long serialVersionUID = 1L;	
+	Integer batchSize = 50;
 	private Map<Integer, GeneralNeuron> neurons = new HashMap<Integer, GeneralNeuron>();
 	private List<GeneralNeuron> inputNeurons = new ArrayList<GeneralNeuron>();
 	private List<GeneralNeuron> hiddenNeurons = new ArrayList<GeneralNeuron>();
 	private List<GeneralNeuron> outputNeurons = new ArrayList<GeneralNeuron>();
 	private int biasId, size = 2;
 	INDArray stabilMatrix;
+	
+	public Network(){}
 
-	public Network(NeatChromosome chrom, PropertiesHolder p, INDArray stabilMatrix) {
+	public Network(NeatChromosome chrom, PropertiesHolder p, INDArray stabilMatrix, int batchSize) {
 		super(p);
 		this.stabilMatrix = stabilMatrix;		
 		//batchSize = Integer.parseInt(getParams().getProperty(BATCHSIZE));		
@@ -49,7 +50,7 @@ public class Network extends BaseNeat {
 		// first create the nodes
 
 		for (int i = 0; i < chrom.getNeurons().sizeWithBias(); i++) {
-			GeneralNeuron neuron = new GeneralNeuron(chrom.getNeurons().getByIndex(i), getHolder(), this.stabilMatrix);
+			GeneralNeuron neuron = new GeneralNeuron(chrom.getNeurons().getByIndex(i), getHolder(), this.stabilMatrix, batchSize);
 			addNeuron(neuron);
 		}
 
@@ -264,5 +265,9 @@ public class Network extends BaseNeat {
 			}
 		}
 		return true;
+	}
+	
+	public void setBatchSize(int size) {
+		batchSize = size;
 	}
 }

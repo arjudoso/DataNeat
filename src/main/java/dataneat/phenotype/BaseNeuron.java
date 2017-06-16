@@ -23,9 +23,9 @@ import dataneat.genome.NeuronGene;
 import dataneat.genome.NeuronType;
 import dataneat.utils.PropertiesHolder;
 
-public abstract class BaseNeuron extends BaseNeat {	
+public abstract class BaseNeuron extends BaseNeat {		
 	
-	private static final String BATCHSIZE = "batchSize";
+	private static final long serialVersionUID = 1L;
 	Integer batchSize = 50;
 	//Id of the link split during evolution
 	protected int id;
@@ -33,18 +33,20 @@ public abstract class BaseNeuron extends BaseNeat {
 	protected NeuronType type;
 	protected double splitY = 0.0;
 	
-	public BaseNeuron(PropertiesHolder p) {
+	public BaseNeuron(){}
+	
+	public BaseNeuron(PropertiesHolder p, int batchSize) {
 		super(p);		
-		batchSize = Integer.parseInt(getParams().getProperty(BATCHSIZE));
+		this.batchSize = batchSize;
 		init();
 	}
 
-	public BaseNeuron(NeuronGene gene, PropertiesHolder p) {
+	public BaseNeuron(NeuronGene gene, PropertiesHolder p, int batchSize) {
 		super(p);		
 		this.id = gene.getID();
 		this.type = gene.getNeuronType();
 		this.splitY = gene.getSplitY();
-		batchSize = Integer.parseInt(getParams().getProperty(BATCHSIZE));
+		this.batchSize = batchSize;
 		init();
 	}
 	
@@ -101,5 +103,9 @@ public abstract class BaseNeuron extends BaseNeat {
 	
 	public double getSplitY() {
 		return splitY;
+	}
+	
+	public void setBatchSize(int size) {
+		batchSize = size;
 	}
 }

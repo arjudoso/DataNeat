@@ -34,10 +34,10 @@ import dataneat.utils.RandGen;
 
 public class Engine extends BaseNeat {
 
+	private static final long serialVersionUID = 1L;
 	private static final String TEST_DELAY = "testDelay";
 	private static final String CONSOLE_DELAY = "consoleDelay";
-	private static final String STABIL_THRESH = "stabilizationDelta";
-	private static final String BATCH_SIZE = "batchSize";
+	private static final String STABIL_THRESH = "stabilizationDelta";	
 	private static final String COMPLEXITY_THRESH = "complexityThresh";
 
 	private double stabilDelta = 0.01;
@@ -51,6 +51,8 @@ public class Engine extends BaseNeat {
 	private TestFitnessOperator testFitnessOperator;
 	private SupervisedEvolver evolver;
 	private Population pop;
+	
+	public Engine(){}
 
 	public Engine(PropertiesHolder p) {
 		super(p);
@@ -64,8 +66,7 @@ public class Engine extends BaseNeat {
 		consoleDelay = Integer.parseInt(getParams().getProperty(CONSOLE_DELAY));
 		stabilDelta = Double.parseDouble(getParams().getProperty(STABIL_THRESH));
 		complexityThresh = Double.parseDouble(getParams().getProperty(COMPLEXITY_THRESH));
-		this.batchSize = batchSize;
-		getParams().setProperty(BATCH_SIZE, this.batchSize.toString());
+		this.batchSize = batchSize;		
 		stabilMatrix = Nd4j.zeros(batchSize, 1);
 		stabilMatrix.addi(stabilDelta);
 		testFitnessOperator = new TestFitnessOperator(getHolder());
@@ -273,12 +274,11 @@ public class Engine extends BaseNeat {
 			chrom = pop.getTrainingBest();
 		}
 		
-		batchSize = inputs.rows();
-		getParams().setProperty(BATCH_SIZE, Integer.toString(batchSize));
+		batchSize = inputs.rows();		
 		stabilMatrix = Nd4j.zeros(batchSize, 1);
 		stabilMatrix.addi(stabilDelta);
 
-		Network net = new Network(chrom, getHolder(), stabilMatrix);
+		Network net = new Network(chrom, getHolder(), stabilMatrix, batchSize);
 		System.out.println(chrom.getFitness());
 		net.computeNetPrevTimestep(inputs);
 		return net.getOutput();
@@ -296,8 +296,12 @@ public class Engine extends BaseNeat {
 		default:
 			chrom = pop.getTrainingBest();
 		}
+		
+		batchSize = inputs.rows();		
+		stabilMatrix = Nd4j.zeros(batchSize, 1);
+		stabilMatrix.addi(stabilDelta);
 
-		Network net = new Network(chrom, getHolder(), stabilMatrix);
+		Network net = new Network(chrom, getHolder(), stabilMatrix, batchSize);
 		net.computeNetPrevTimestep(inputs);
 		IO.addToFile(net.getOutput().toString(), file);
 	}
